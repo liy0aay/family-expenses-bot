@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Family Expenses API
+  version: 1.0.0
+  description: |
+    REST API веб-панели главы семьи. Без авторизации (FamilyHeadScope: видны все траты семьи,
+    user_id — только опциональный фильтр).
+
+    Деньги: в ответах — amount_minor, целые копейки (int64); в запросах (POST/PATCH) — amount_rub,
+    десятичная строка в рублях («350.50»). Конвертация — на сервере, той же функцией, что у бота
+    (единая валидация: не больше двух знаков после точки, иначе invalid_amount).
+    Категории: на входе допускается slug или русское название (нормализуются, е→ё);
+    в ответах category — slug, category_name — русское название (пользователь слуг не видит).
+    Списки без пагинации: настраиваемый лимит (query-параметр limit).
+
+    Ошибки: JSON {error: {code, message}} — см. specs/001-family-expenses-mvp/contracts/errors.md.
+servers:
+  - url: /api/v1
+tags:
+  - name: users
+  - name: expenses
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: Члены семьи (для фильтра и выбора при создании траты)
+      responses:
+        '200':
+          description: Список членов семьи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: Траты всех членов семьи с фильтрами
+      parameters:
+        - name: user_id
+          in: query
+          description: Фильтр по члену семьи (опционально)
+          schema:
+            type: integer
+            format: int64
+        - name: date_from
+          in: query
+          description: Начало периода (включительно)
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: Конец периода (включительно)
+          schema:
+            type: string
+            format: date
+        - name: category
+          in: query
+          description: Slug или русское название категории (нормализуется)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Лимит списка (пагинации нет; сервер ограничивает максимум)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 200
+      responses:
+        '200':
+          description: 'Список трат (сортировка: spent_at DESC, id DESC)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseList'
+        '400':
+          description: Некорректные фильтры (invalid_category / invalid_date / bad_request)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Создать трату от имени выбранного члена семьи
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreate'
+      responses:
+        '201':
+          description: Трата создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: invalid_amount / invalid_category / invalid_date / bad_request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /expenses/{expense_id}:
+    parameters:
+      - name: expense_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      operationId: getExpense
+      tags: [expenses]
+      summary: Получить трату
+      responses:
+        '200':
+          description: Трата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '404':
+          description: not_found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      operationId: patchExpense
+      tags: [expenses]
+      summary: Частично изменить трату (переданные поля)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpensePatch'
+      responses:
+        '200':
+          description: Обновлённая трата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: invalid_amount / invalid_category / invalid_date / bad_request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: not_found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Удалить трату
+      responses:
+        '204':
+          description: Удалена
+        '404':
+          description: not_found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, first_name]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Telegram ID
+        username:
+          type: string
+          nullable: true
+        first_name:
+          type: string
+    UserList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    Expense:
+      type: object
+      required: [id, user_id, user_name, amount_minor, category, category_name, spent_at, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        user_name:
+          type: string
+          description: Отображаемое имя владельца (first_name, иначе username)
+        amount_minor:
+          type: integer
+          format: int64
+          description: Сумма в копейках (> 0)
+        category:
+          type: string
+          enum: [food, transport, housing, entertainment, health, shopping, other]
+        category_name:
+          type: string
+          enum: [еда, транспорт, жильё, развлечения, здоровье, покупки, другое]
+          description: Русское название для отображения
+        spent_at:
+          type: string
+          format: date
+        comment:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ExpenseList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Expense'
+    ExpenseCreate:
+      type: object
+      required: [user_id, amount_rub, category, spent_at]
+      properties:
+        user_id:
+          type: integer
+          format: int64
+          description: Член семьи, от имени которого создаётся трата
+        amount_rub:
+          type: string
+          description: >
+            Сумма в рублях десятичной строкой («350», «350.50»): не больше двух знаков
+            после точки, иначе invalid_amount. Сервер конвертирует в amount_minor.
+        category:
+          type: string
+          description: Slug или русское название категории (нормализуется)
+        spent_at:
+          type: string
+          format: date
+        comment:
+          type: string
+          maxLength: 500
+          description: До 500 символов
+    ExpensePatch:
+      type: object
+      description: Переданные поля изменяются, остальные сохраняются
+      properties:
+        amount_rub:
+          type: string
+          description: >
+            Новая сумма в рублях десятичной строкой («450», «450.00»); правила те же, что в POST.
+        category:
+          type: string
+          description: Slug или русское название категории (нормализуется)
+        spent_at:
+          type: string
+          format: date
+        comment:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: null — очистить комментарий
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [invalid_amount, invalid_category, invalid_date, not_found, bad_request, internal]
+            message:
+              type: string

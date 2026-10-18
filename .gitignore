@@ -1,0 +1,15 @@
+# IDE
+.idea/
+.opencode/
+
+# ENV
+.env
+
+# build and dependencies
+bin/
+dist/
+node_modules/
+coverage.out
+
+# OS
+.DS_Store
