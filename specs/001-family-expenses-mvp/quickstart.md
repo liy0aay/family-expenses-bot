@@ -4,7 +4,7 @@
 
 - Docker + docker compose.
 - `.env` по образцу `.env.example`:
-  - `PG_*` — доступ к PostgreSQL (в compose задаётся сам);
+  - `POSTGRES_*` — доступ к PostgreSQL (в compose задаётся сам);
   - `LISTEN_ADDR=:8080`;
   - `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_TEMPERATURE` — доступ к LLM (нужен для сценариев бота и evals);
   - `TELEGRAM_BOT_TOKEN` — может быть пустым (режим Web-API only);

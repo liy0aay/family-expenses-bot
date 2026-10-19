@@ -69,7 +69,7 @@ cmd/
 └── server/
     └── main.go             # Конфиг, ручной DI, запуск REST (+ бот при заданном токене), seeding
 internal/
-├── config/                 # ENV: PG_*, LLM_BASE_URL/LLM_API_KEY/LLM_MODEL, TELEGRAM_BOT_TOKEN,
+├── config/                 # ENV: POSTGRES_*, LLM_BASE_URL/LLM_API_KEY/LLM_MODEL, TELEGRAM_BOT_TOKEN,
 │                           #      LISTEN_ADDR, лимит списка, окно/TTL памяти
 ├── clock/                  # Интерфейс Clock + RealClock / FixedClock
 ├── domain/                 # Expense, User, Category (slug↔русское), ошибки домена,
