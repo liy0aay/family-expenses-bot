@@ -69,11 +69,11 @@
 
 **Цель**: воспроизводимое качество агента и «одна команда» запуска.
 
-- [ ] T029 [P] Датасет `evals/dataset.yaml`: 25–30 кейсов — добавление/просмотр/изменение/удаление, относительные даты («вчера», «позавчера», «в этом месяце», «с 1 по 15 октября»), е/ё, сообщения не о тратах, некорректные суммы, изоляция — закрывает: FR-023; SC-002
-- [ ] T030 Раннер `evals/runner_eval.go` с тегом `//go:build eval`: фиксированный reference_time через FixedClock, прогон датасета через агента, отчёт с процентом прохождения (порог ≥90%); таргет `make eval` в `Makefile` — закрывает: FR-023; SC-001, SC-002
-- [ ] T031 `docker-compose.yml` + `Dockerfile` (multi-stage: статика web + сервер): postgres:16, server, web; web проксирует `/api` → server (как в quickstart); всё поднимается `docker compose up` без ручных шагов — закрывает: FR-020; SC-007
-- [ ] T032 CI `.github/workflows/ci.yml`: `make lint && make test` + проверка пустого diff кодогенерации (`make generate` → `git diff --exit-code`) — закрывает: FR-017; процесс из AGENTS.md
-- [ ] T033 [P] Финальный `README.md`: запуск `docker compose up`, заполнение `.env`, сценарии бота/панели/evals со ссылками на quickstart.md — закрывает: FR-020; SC-007
+- [x] T029 [P] Датасет `evals/dataset.yaml`: 25–30 кейсов — добавление/просмотр/изменение/удаление, относительные даты («вчера», «позавчера», «в этом месяце», «с 1 по 15 октября»), е/ё, сообщения не о тратах, некорректные суммы, изоляция — закрывает: FR-023; SC-002
+- [x] T030 Раннер `evals/runner_eval.go` с тегом `//go:build eval`: фиксированный reference_time через FixedClock, прогон датасета через агента, отчёт с процентом прохождения (порог ≥90%); таргет `make eval` в `Makefile` — закрывает: FR-023; SC-001, SC-002
+- [x] T031 `docker-compose.yml` + `Dockerfile` (multi-stage: статика web + сервер): postgres:16, server, web; web проксирует `/api` → server (как в quickstart); всё поднимается `docker compose up` без ручных шагов — закрывает: FR-020; SC-007
+- [x] T032 CI `.github/workflows/ci.yml`: `make lint && make test` + проверка пустого diff кодогенерации (`make generate` → `git diff --exit-code`) — закрывает: FR-017; процесс из AGENTS.md
+- [x] T033 [P] Финальный `README.md`: запуск `docker compose up`, заполнение `.env`, сценарии бота/панели/evals со ссылками на quickstart.md — закрывает: FR-020; SC-007
 
 **Checkpoint**: `docker compose up` с чистого клона → все сценарии quickstart.md воспроизводимы.
 

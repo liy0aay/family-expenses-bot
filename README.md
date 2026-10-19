@@ -6,36 +6,41 @@
 - **Telegram-бот с ИИ-агентом.** Понимает обычный текст: добавляет, показывает, изменяет и удаляет траты. Каждому члену семьи доступны только его траты.
 - **Веб-панель для главы семьи.** Показывает траты всех членов семьи и позволяет их редактировать. Авторизация не нужна.
 
-## Telegram-бот
-Бот реализует CRUD над тратами пользователя на естественном языке, без кнопок и команд:
 
-- добавить: «кофе 350», «такси 1200 вчера»;
-- посмотреть: «сколько потратил на еду в этом месяце», «покажи траты за неделю»;
-- изменить: «последнее было не 350, а 450»;
-- удалить: «удали такси».
+## quick start
 
-Ссылка «последнее» резолвится через память диалога. Если она пуста или истекла, берётся последняя созданная трата пользователя. Если на удаление нашлось несколько подходящих трат, бот показывает 2–3 последние и задаёт один уточняющий вопрос. Сообщения не о тратах бот обрабатывает как простую беседу.
-
-## Веб-панель
-CRUD над тратами всех членов семьи: список с фильтром по члену семьи, периоду и категории, создание, редактирование, удаление. Панель работает с бэкендом через REST API, контракт: `api/openapi.yaml` (OpenAPI 3.0.3).
-
-## AI-First & SDD Workflow
-Проектирование и разработка ведутся по методологии Spec-Driven Development (`spec-kit`):
-- Правила и инварианты для ИИ-ассистентов: [AGENTS.md](./AGENTS.md) и [Конституция](.specify/memory/constitution.md)
-- Продуктовая спецификация и технический план: [specs/001-family-expenses-mvp/](specs/001-family-expenses-mvp/)
-- Архитектурные решения (ADR): [docs/decisions.md](docs/decisions.md)
-
-## Стек
-Go 1.27 (pgx/v5, sqlc, ogen), PostgreSQL 16, LLM, React + TS.
-
-## Запуск
-
-```bash
+```sh
 cp .env.example .env
-docker compose up
+# заполнить LLM_BASE_URL, LLM_API_KEY, LLM_MODEL,TELEGRAM_BOT_TOKEN
+docker compose up --build
 ```
 
-- для бота и evals заполняются `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`;
-- `TELEGRAM_BOT_TOKEN` можно оставить пустым: поднимутся REST API (порт 8080) и веб-панель (порт 3000), в логах будет `WARN: starting in Web-API only mode`;
-- при первом старте на пустой базе создаётся демо-семья с тратами;
-- пошаговая проверка: `specs/001-family-expenses-mvp/quickstart.md` (REST через curl, сценарии бота, изоляция данных, evals).
+- `TELEGRAM_BOT_TOKEN` можно оставить пустым: сервер стартует в режиме Web-API only.
+- На пустой базе создаётся тестовая семья с тратами за текущий месяц - панель не пустая сразу после старта.
+- Пошаговая проверка всех сценариев: [quickstart.md](specs/001-family-expenses-mvp/quickstart.md).
+
+## dev
+
+```sh
+docker compose up -d postgres
+
+make run       
+make lint       # golangci-lint 
+make test       
+          
+make generate   # ogen + sqlc
+make eval       
+
+cd web && npm run dev   # веб панель
+npm run build           # production 
+npm run gen:api         
+```
+
+
+## doc
+
+- [Quickstart](specs/001-family-expenses-mvp/quickstart.md) — сквозные сценарии проверки.
+- [Контракты](specs/001-family-expenses-mvp/contracts/) — REST, тулы агента, коды ошибок.
+- [ADR](docs/decisions.md) — архитектурные решения.
+- [Спецификация](specs/001-family-expenses-mvp/spec.md) и [план](specs/001-family-expenses-mvp/plan.md) — требования и технический план.
+- Правила для ИИ-агентов: [AGENTS.md](AGENTS.md), [конституция](.specify/memory/constitution.md).

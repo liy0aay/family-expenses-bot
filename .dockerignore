@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+bin/
+dist/
+node_modules/
+web/node_modules/
+web/dist/
+coverage.out
+*.log
+.DS_Store
+.idea/
+.opencode/
+.specify/
+

@@ -356,7 +356,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							switch method {
 							case "GET":
 								r.name = GetExpensesSummaryOperation
-								r.summary = "Распределение трат по категориям за период (SQL-агрегация, та же, что для сводки бота)"
+								r.summary = "Распределение трат по категориям за период"
 								r.operationID = "getExpensesSummary"
 								r.operationGroup = ""
 								r.pathPattern = "/expenses/summary"

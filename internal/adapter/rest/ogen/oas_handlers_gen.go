@@ -464,8 +464,7 @@ func (s *Server) handleGetExpenseRequest(args [1]string, argsEscaped bool, w htt
 
 // handleGetExpensesSummaryRequest handles getExpensesSummary operation.
 //
-// Распределение трат по категориям за период
-// (SQL-агрегация, та же, что для сводки бота).
+// Распределение трат по категориям за период.
 //
 // GET /expenses/summary
 func (s *Server) handleGetExpensesSummaryRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -557,7 +556,7 @@ func (s *Server) handleGetExpensesSummaryRequest(args [0]string, argsEscaped boo
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    GetExpensesSummaryOperation,
-			OperationSummary: "Распределение трат по категориям за период (SQL-агрегация, та же, что для сводки бота)",
+			OperationSummary: "Распределение трат по категориям за период",
 			OperationID:      "getExpensesSummary",
 			Body:             nil,
 			RawBody:          rawBody,

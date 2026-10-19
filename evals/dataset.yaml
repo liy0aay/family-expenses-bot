@@ -1,0 +1,125 @@
+cases:
+  - id: add_simple
+    chat: 1001
+    input: "кофе 350"
+    expect: { tools_min: 1, count_delta: 1 }
+
+  - id: add_yesterday
+    chat: 1001
+    input: "такси 1200 вчера"
+    expect: { tools_min: 1, count_delta: 1 }
+
+  - id: add_day_before_yesterday
+    chat: 1001
+    input: "обед 600 позавчера"
+    expect: { tools_min: 1, count_delta: 1 }
+
+  - id: add_yo_category
+    chat: 1001
+    input: "жилье 50000 1 октября"
+    expect: { tools_min: 1, count_delta: 1, contains_any: ["жильё"] }
+
+  - id: add_with_comment
+    chat: 1001
+    input: "пицца на день рождения 900 вчера"
+    expect: { tools_min: 1, count_delta: 1 }
+
+  - id: view_period_oct_1_15
+    chat: 1001
+    input: "покажи траты с 1 по 15 октября"
+    expect: { tools_min: 1, count_delta: 0 }
+
+  - id: view_week
+    chat: 1001
+    input: "покажи мои траты за неделю"
+    expect: { tools_min: 1, count_delta: 0 }
+
+  - id: view_today_sum
+    chat: 1001
+    input: "сколько я потратил сегодня"
+    expect: { tools_min: 1, count_delta: 0 }
+
+  - id: view_month_list
+    chat: 1001
+    input: "какие у меня траты в этом месяце"
+    expect: { tools_min: 1, count_delta: 0 }
+
+  - id: find_by_word_hit
+    chat: 1001
+    input: "найди кофе"
+    expect: { tools_min: 1, count_delta: 0, contains_any: ["350"] }
+
+  - id: find_by_word_miss
+    chat: 1001
+    input: "найди кафетерий"
+    expect: { tools_max: 2, count_delta: 0, contains_any: ["не нашл", "нет трат", "ничего"] }
+
+  - id: update_last_amount
+    chat: 1001
+    input: "последнее было не 350, а 450"
+    expect: { tools_min: 1, count_delta: 0, contains_any: ["450"] }
+
+  - id: update_by_word
+    chat: 1001
+    input: "измени вчерашнее такси на 1500"
+    expect: { tools_min: 1, tools_max: 4, count_delta: 0, contains_any: ["1500"] }
+
+  - id: delete_single_match
+    chat: 1001
+    input: "удали пиццу"
+    expect: { tools_min: 1, tools_max: 3, count_delta: -1, contains_any: ["900", "пицц"] }
+
+  - id: delete_ambiguous
+    chat: 1001
+    input: "удали еду"
+    expect: { tools_min: 1, tools_max: 2, count_delta: 0 }
+
+  - id: delete_nothing_found
+    chat: 1001
+    input: "удали кафетерий"
+    expect: { tools_min: 1, tools_max: 2, count_delta: 0, contains_any: ["не нашл", "нет трат", "ничего"] }
+
+  - id: summary_food_month
+    chat: 1001
+    input: "сколько я потратил на еду в этом месяце"
+    expect: { tools_min: 1, count_delta: 0, contains_any: ["1050", "1 050"] }
+
+  - id: isolation_empty_chat
+    chat: 1002
+    input: "показать мои траты за неделю"
+    expect: { tools_min: 1, count_delta: 0, contains_any: ["не нашл", "нет трат", "пока нет", "ничего"] }
+
+  - id: isolation_delete_foreign
+    chat: 1002
+    input: "удали трату 1"
+    expect: { tools_min: 1, tools_max: 3, count_delta: 0, contains_any: ["не нашл", "нет такой", "не удал", "нельзя"] }
+
+  - id: chat_greeting
+    chat: 1001
+    input: "привет"
+    expect: { tools_max: 0, count_delta: 0 }
+
+  - id: chat_thanks
+    chat: 1001
+    input: "спасибо!"
+    expect: { tools_max: 0, count_delta: 0 }
+
+  - id: chat_off_domain
+    chat: 1001
+    input: "расскажи рецепт пирога"
+    expect: { tools_max: 0, count_delta: 0, contains_any: ["расходы"] }
+
+  - id: chat_capabilities
+    chat: 1001
+    input: "что ты умеешь?"
+    expect: { tools_max: 0, count_delta: 0, contains_any: ["добав", "найд"] }
+
+  - id: invalid_zero_amount
+    chat: 1001
+    input: "кофе 0"
+    expect: { tools_max: 3, count_delta: 0 }
+
+  - id: invalid_three_decimals
+    chat: 1001
+    input: "кофе 350.505"
+    expect: { tools_max: 3, count_delta: 0 }

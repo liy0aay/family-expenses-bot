@@ -48,8 +48,7 @@ type Invoker interface {
 	GetExpense(ctx context.Context, params GetExpenseParams) (GetExpenseRes, error)
 	// GetExpensesSummary invokes getExpensesSummary operation.
 	//
-	// Распределение трат по категориям за период
-	// (SQL-агрегация, та же, что для сводки бота).
+	// Распределение трат по категориям за период.
 	//
 	// GET /expenses/summary
 	GetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (GetExpensesSummaryRes, error)
@@ -393,8 +392,7 @@ func (c *Client) sendGetExpense(ctx context.Context, params GetExpenseParams) (r
 
 // GetExpensesSummary invokes getExpensesSummary operation.
 //
-// Распределение трат по категориям за период
-// (SQL-агрегация, та же, что для сводки бота).
+// Распределение трат по категориям за период.
 //
 // GET /expenses/summary
 func (c *Client) GetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (GetExpensesSummaryRes, error) {

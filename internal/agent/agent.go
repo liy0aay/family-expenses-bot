@@ -19,7 +19,9 @@ var systemPrompt string
 const (
 	maxToolIterations = 4
 
-	llmFailText = "Временная проблема с ИИ, попробуй чуть позже."
+	// LLMFailText is the reply for a transport-class LLM failure; exported so the
+	// evals runner can recognize such replies and retry the case.
+	LLMFailText = "Временная проблема с ИИ, попробуй чуть позже."
 	giveUpText  = "Не получилось обработать запрос. Попробуй упростить его или разбить на несколько сообщений."
 	recentIDs   = 3
 )
@@ -61,7 +63,7 @@ func (a *Agent) Handle(ctx context.Context, chatID int64, text string) string {
 		resp, err := a.llm.Chat(ctx, messages, definitions)
 		if err != nil {
 			slog.Error("agent llm chat", "chat_id", chatID, "error", err)
-			return a.finish(chatID, llmFailText)
+			return a.finish(chatID, LLMFailText)
 		}
 		if len(resp.ToolCalls) == 0 {
 			// an empty content would be rejected by the Telegram API as an empty message;
@@ -69,7 +71,7 @@ func (a *Agent) Handle(ctx context.Context, chatID int64, text string) string {
 			// Warn instead of Error: the request reached the model, the model did not answer
 			if strings.TrimSpace(resp.Content) == "" {
 				slog.Warn("agent empty llm reply", "chat_id", chatID)
-				return a.finish(chatID, llmFailText)
+				return a.finish(chatID, LLMFailText)
 			}
 			return a.finish(chatID, resp.Content)
 		}

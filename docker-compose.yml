@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-expenses}
+    ports:
+      - "${POSTGRES_HOST_PORT:-55450}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-expenses}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  server:
+    build:
+      context: .
+      target: server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-expenses}
+      LISTEN_ADDR: ":8080"
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: .
+      target: web
+    depends_on:
+      - server
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:
