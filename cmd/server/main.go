@@ -8,6 +8,7 @@ import (
 
 	ogen "github.com/liy0aay/family-expenses-bot/internal/adapter/rest/ogen"
 	"github.com/liy0aay/family-expenses-bot/internal/config"
+	"github.com/liy0aay/family-expenses-bot/internal/storage/postgres"
 )
 
 type stubHandler struct{}
@@ -37,11 +38,27 @@ func (stubHandler) DeleteExpense(context.Context, ogen.DeleteExpenseParams) (oge
 }
 
 func main() {
+	ctx := context.Background()
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("config load failed", "err", err)
 		os.Exit(1)
 	}
+
+	pool, err := postgres.NewPool(ctx, cfg.Postgres.DSN())
+	if err != nil {
+		slog.Error("postgres connect failed", "err", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	version, err := postgres.Migrate(ctx, pool)
+	if err != nil {
+		slog.Error("migrations failed", "err", err)
+		os.Exit(1)
+	}
+	slog.Info("migrations applied", "version", version)
 
 	ogenServer, err := ogen.NewServer(stubHandler{})
 	if err != nil {
