@@ -401,3 +401,78 @@ func TestInternalErrorsServe500WithCodeInternal(t *testing.T) {
 		t.Fatalf("GET /expenses/42 code %q, want internal", e.Error.Code)
 	}
 }
+
+type summaryItemResponse struct {
+	Category      string `json:"category"`
+	CategoryName  string `json:"category_name"`
+	TotalMinor    int64  `json:"total_minor"`
+	ExpensesCount int    `json:"expenses_count"`
+}
+
+type summaryResponse struct {
+	Items           []summaryItemResponse `json:"items"`
+	GrandTotalMinor int64                 `json:"grand_total_minor"`
+}
+
+func getSummary(t *testing.T, ts *httptest.Server, query string, wantStatus int) summaryResponse {
+	t.Helper()
+
+	status, data := doRequest(t, ts, http.MethodGet, "/expenses/summary"+query, "")
+	if status != wantStatus {
+		t.Fatalf("summary %q: status %d, want %d: %s", query, status, wantStatus, data)
+	}
+	var s summaryResponse
+	if err := json.Unmarshal(data, &s); err != nil {
+		t.Fatalf("decode summary: %v", err)
+	}
+	return s
+}
+
+func TestExpensesSummary(t *testing.T) {
+	ts, pool := newTestEnv(t)
+	seedUser(t, pool, aliceID, "alice", "Алиса")
+	seedUser(t, pool, bobID, "", "Борис")
+
+	// october fixtures; the september expense stays outside the period
+	createExpense(t, ts, `{"user_id":101,"amount_rub":"350.50","category":"food","spent_at":"2026-10-17"}`)
+	createExpense(t, ts, `{"user_id":101,"amount_rub":"100","category":"food","spent_at":"2026-10-18"}`)
+	createExpense(t, ts, `{"user_id":102,"amount_rub":"1200","category":"transport","spent_at":"2026-10-19"}`)
+	createExpense(t, ts, `{"user_id":101,"amount_rub":"4500","category":"housing","spent_at":"2026-09-30"}`)
+
+	s := getSummary(t, ts, "?date_from=2026-10-01&date_to=2026-10-31", http.StatusOK)
+	if len(s.Items) != 2 {
+		t.Fatalf("want 2 categories, got %d: %+v", len(s.Items), s.Items)
+	}
+	if s.Items[0].Category != "food" || s.Items[0].CategoryName != "еда" || s.Items[0].TotalMinor != 45050 || s.Items[0].ExpensesCount != 2 {
+		t.Fatalf("food row mismatch: %+v", s.Items[0])
+	}
+	if s.Items[1].Category != "transport" || s.Items[1].CategoryName != "транспорт" || s.Items[1].TotalMinor != 120000 || s.Items[1].ExpensesCount != 1 {
+		t.Fatalf("transport row mismatch: %+v", s.Items[1])
+	}
+	if s.GrandTotalMinor != 165050 {
+		t.Fatalf("grand_total_minor %d, want 165050", s.GrandTotalMinor)
+	}
+
+	s = getSummary(t, ts, "?user_id=102&date_from=2026-10-01&date_to=2026-10-31", http.StatusOK)
+	if len(s.Items) != 1 || s.Items[0].Category != "transport" || s.GrandTotalMinor != 120000 {
+		t.Fatalf("user-filtered summary mismatch: %+v", s)
+	}
+
+	s = getSummary(t, ts, "?date_from=2020-01-01&date_to=2020-01-31", http.StatusOK)
+	if s.Items == nil || len(s.Items) != 0 {
+		t.Fatalf("items must be empty array, got: %+v", s.Items)
+	}
+	if s.GrandTotalMinor != 0 {
+		t.Fatalf("grand_total_minor %d, want 0", s.GrandTotalMinor)
+	}
+
+	// ogen validates the date format before the handler, same as GET /expenses
+	status, data := doRequest(t, ts, http.MethodGet, "/expenses/summary?date_from=banana", "")
+	if status != http.StatusBadRequest {
+		t.Fatalf("status %d: %s", status, data)
+	}
+	e := decodeError(t, status, data)
+	if e.Error.Code != "bad_request" {
+		t.Fatalf("code %q, want bad_request", e.Error.Code)
+	}
+}

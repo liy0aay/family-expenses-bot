@@ -104,6 +104,37 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 's': // Prefix: "summary"
+						origElem := elem
+						if l := len("summary"); len(elem) >= l && elem[0:l] == "summary" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleGetExpensesSummaryRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					}
 					// Param: "expense_id"
 					// Leaf parameter, slashes are prohibited
 					idx := strings.IndexByte(elem, '/')
@@ -308,6 +339,37 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 's': // Prefix: "summary"
+						origElem := elem
+						if l := len("summary"); len(elem) >= l && elem[0:l] == "summary" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = GetExpensesSummaryOperation
+								r.summary = "Распределение трат по категориям за период (SQL-агрегация, та же, что для сводки бота)"
+								r.operationID = "getExpensesSummary"
+								r.operationGroup = ""
+								r.pathPattern = "/expenses/summary"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					}
 					// Param: "expense_id"
 					// Leaf parameter, slashes are prohibited
 					idx := strings.IndexByte(elem, '/')

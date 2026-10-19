@@ -46,6 +46,13 @@ type Invoker interface {
 	//
 	// GET /expenses/{expense_id}
 	GetExpense(ctx context.Context, params GetExpenseParams) (GetExpenseRes, error)
+	// GetExpensesSummary invokes getExpensesSummary operation.
+	//
+	// Распределение трат по категориям за период
+	// (SQL-агрегация, та же, что для сводки бота).
+	//
+	// GET /expenses/summary
+	GetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (GetExpensesSummaryRes, error)
 	// ListExpenses invokes listExpenses operation.
 	//
 	// Траты всех членов семьи с фильтрами.
@@ -377,6 +384,142 @@ func (c *Client) sendGetExpense(ctx context.Context, params GetExpenseParams) (r
 
 	stage = "DecodeResponse"
 	result, err := decodeGetExpenseResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetExpensesSummary invokes getExpensesSummary operation.
+//
+// Распределение трат по категориям за период
+// (SQL-агрегация, та же, что для сводки бота).
+//
+// GET /expenses/summary
+func (c *Client) GetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (GetExpensesSummaryRes, error) {
+	res, err := c.sendGetExpensesSummary(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (res GetExpensesSummaryRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getExpensesSummary"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/expenses/summary"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetExpensesSummaryOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/expenses/summary"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "user_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "user_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.UserID.Get(); ok {
+				return e.EncodeValue(conv.Int64ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "date_from" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "date_from",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.DateFrom.Get(); ok {
+				return e.EncodeValue(conv.DateToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "date_to" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "date_to",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.DateTo.Get(); ok {
+				return e.EncodeValue(conv.DateToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetExpensesSummaryResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

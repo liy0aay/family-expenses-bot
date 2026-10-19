@@ -26,6 +26,13 @@ type Handler interface {
 	//
 	// GET /expenses/{expense_id}
 	GetExpense(ctx context.Context, params GetExpenseParams) (GetExpenseRes, error)
+	// GetExpensesSummary implements getExpensesSummary operation.
+	//
+	// Распределение трат по категориям за период
+	// (SQL-агрегация, та же, что для сводки бота).
+	//
+	// GET /expenses/summary
+	GetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (GetExpensesSummaryRes, error)
 	// ListExpenses implements listExpenses operation.
 	//
 	// Траты всех членов семьи с фильтрами.

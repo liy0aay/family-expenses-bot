@@ -65,7 +65,8 @@ func Load() (Config, error) {
 	}
 	cfg.LLM.Temperature = temperature
 
-	limit, err := envInt("EXPENSES_LIST_LIMIT", 200)
+	// default is aligned with the maximum of the limit query parameter in openapi
+	limit, err := envInt("EXPENSES_LIST_LIMIT", 500)
 	if err != nil {
 		return Config{}, err
 	}

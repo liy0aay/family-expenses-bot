@@ -144,6 +144,44 @@ func (h *Handlers) DeleteExpense(ctx context.Context, params ogen.DeleteExpenseP
 	return &ogen.DeleteExpenseNoContent{}, nil
 }
 
+func (h *Handlers) GetExpensesSummary(ctx context.Context, params ogen.GetExpensesSummaryParams) (ogen.GetExpensesSummaryRes, error) {
+	in := service.SummaryInput{}
+	var filter *int64
+	if params.UserID.Set {
+		filter = &params.UserID.Value
+	}
+	if params.DateFrom.Set {
+		in.DateFrom = params.DateFrom.Value.Format("2006-01-02")
+	}
+	if params.DateTo.Set {
+		in.DateTo = params.DateTo.Value.Format("2006-01-02")
+	}
+
+	summary, err := h.expenses.Summary(service.WithFamilyHeadScope(ctx, filter), in)
+	if err != nil {
+		return summaryError(err), nil
+	}
+	items := make([]ogen.SummaryItem, 0, len(summary.Rows))
+	for _, row := range summary.Rows {
+		categoryName, _ := domain.CategoryRussianName(row.Category)
+		items = append(items, ogen.SummaryItem{
+			Category:      ogen.SummaryItemCategory(row.Category),
+			CategoryName:  ogen.SummaryItemCategoryName(categoryName),
+			TotalMinor:    row.TotalMinor,
+			ExpensesCount: int(row.Count),
+		})
+	}
+	return &ogen.SummaryResponse{Items: items, GrandTotalMinor: summary.GrandTotal}, nil
+}
+
+func summaryError(err error) ogen.GetExpensesSummaryRes {
+	payload, status := errorPayload(err)
+	if status == http.StatusInternalServerError {
+		return &ogen.GetExpensesSummaryInternalServerError{Error: payload}
+	}
+	return &ogen.GetExpensesSummaryBadRequest{Error: payload}
+}
+
 // the generated encoder writes each union variant's declared wire status.
 func listExpensesError(err error) ogen.ListExpensesRes {
 	payload, status := errorPayload(err)

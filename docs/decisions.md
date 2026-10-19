@@ -55,3 +55,9 @@
 - **Context**: `make lint` должен давать одинаковый результат локально и в CI (T032); системный бинарник линтера может быть собран более старым Go — установленный v1.64.4 (go1.26.3) отказывается анализировать модули `go 1.27`.
 - **Decision**: версия golangci-lint v2 зафиксирована tool-директивой в `go.mod`, запуск — `go tool golangci-lint run` (цель `make lint`); бинарник собирается локальным тулчейном.
 - **Consequences**: версия линтера воспроизводима без шага установки в CI и не зависит от PATH; go.mod пополняется dev-зависимостями линтера (принято, конституция VII).
+
+## ADR-010. Веб-панель: Vite + React + TS, типы из openapi через openapi-typescript
+
+- **Context**: панель — потребитель REST (ADR-008); нужен single-page UI c простой аналитико расходов без тяжёлых фреймворков, с типами, следующими контракту `api/openapi.yaml`.
+- **Decision**: Vite + React + TypeScript. Типы ответов генерируются `openapi-typescript` (npm script `gen:api`, вход `../api/openapi.yaml`, выход `web/src/api/schema.d.ts`, коммитится). Скрипт сознательно **вне** `make generate`: CI-гейт пустого diff (T032) проверяет Go-кодогенерацию и не должен требовать node. HTTP — ручной типизированный fetch-слой `web/src/api/client.ts` над `/api/v1` с разбором `{error:{code,message}}`, без кодогенератора клиента. Без router и react-query: одна страница, состояние — useState/useEffect, перезагрузка списка после мутаций. Разработка — vite dev с прокси `/api` → `http://localhost:8080` (дефолтный `LISTEN_ADDR` из `internal/config`).
+- **Consequences**: минимум зависимостей (react, react-dom + devDeps vite/@vitejs/plugin-react/typescript/@types/openapi-typescript). Правки `openapi.yaml` не ловятся Go-гейтом — после изменения контракта нужен `npm run gen:api` (иначе типы панели отстают). Список категорий дублируется в `web/src/api/categories.ts` — синхронизировать с `internal/domain/category.go`.

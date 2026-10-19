@@ -13,6 +13,10 @@ type GetExpenseRes interface {
 	getExpenseRes()
 }
 
+type GetExpensesSummaryRes interface {
+	getExpensesSummaryRes()
+}
+
 type ListExpensesRes interface {
 	listExpensesRes()
 }

@@ -116,6 +116,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /expenses/summary:
+    get:
+      operationId: getExpensesSummary
+      tags: [expenses]
+      summary: Распределение трат по категориям за период
+      parameters:
+        - name: user_id
+          in: query
+          description: Фильтр по члену семьи (опционально)
+          schema:
+            type: integer
+            format: int64
+        - name: date_from
+          in: query
+          description: Начало периода (включительно)
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: Конец периода (включительно)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Суммы и количества по категориям
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummaryResponse'
+        '400':
+          description: Некорректные фильтры (invalid_date / bad_request)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка (internal)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /expenses/{expense_id}:
     parameters:
       - name: expense_id
@@ -268,6 +311,37 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Expense'
+    SummaryResponse:
+      type: object
+      required: [items, grand_total_minor]
+      properties:
+        items:
+          type: array
+          description: По одной записи на категорию с тратами за период (сумма/количество — в SQL)
+          items:
+            $ref: '#/components/schemas/SummaryItem'
+        grand_total_minor:
+          type: integer
+          format: int64
+          description: Итог периода в копейках
+    SummaryItem:
+      type: object
+      required: [category, category_name, total_minor, expenses_count]
+      properties:
+        category:
+          type: string
+          enum: [food, transport, housing, entertainment, health, shopping, other]
+        category_name:
+          type: string
+          enum: [еда, транспорт, жильё, развлечения, здоровье, покупки, другое]
+          description: Русское название для отображения
+        total_minor:
+          type: integer
+          format: int64
+          description: Сумма трат категории за период в копейках
+        expenses_count:
+          type: integer
+          description: Количество трат категории за период
     ExpenseCreate:
       type: object
       required: [user_id, amount_rub, category, spent_at]

@@ -40,6 +40,16 @@ func (UnimplementedHandler) GetExpense(ctx context.Context, params GetExpensePar
 	return r, ht.ErrNotImplemented
 }
 
+// GetExpensesSummary implements getExpensesSummary operation.
+//
+// Распределение трат по категориям за период
+// (SQL-агрегация, та же, что для сводки бота).
+//
+// GET /expenses/summary
+func (UnimplementedHandler) GetExpensesSummary(ctx context.Context, params GetExpensesSummaryParams) (r GetExpensesSummaryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ListExpenses implements listExpenses operation.
 //
 // Траты всех членов семьи с фильтрами.

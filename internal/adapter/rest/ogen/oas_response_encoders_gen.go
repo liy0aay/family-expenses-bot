@@ -136,6 +136,50 @@ func encodeGetExpenseResponse(response GetExpenseRes, w http.ResponseWriter, spa
 	}
 }
 
+func encodeGetExpensesSummaryResponse(response GetExpensesSummaryRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SummaryResponse:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetExpensesSummaryBadRequest:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetExpensesSummaryInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeListExpensesResponse(response ListExpensesRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *ExpenseList:

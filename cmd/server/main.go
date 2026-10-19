@@ -41,6 +41,12 @@ func main() {
 	}
 	slog.Info("migrations applied", "version", version)
 
+	clk := clock.Real{}
+	if err := postgres.Seed(ctx, pool, clk.Now()); err != nil {
+		slog.Error("seed failed", "err", err)
+		os.Exit(1)
+	}
+
 	ogenServer, err := ogen.NewServer(
 		rest.NewHandlers(
 			service.NewExpenseService(pool),
@@ -58,7 +64,6 @@ func main() {
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", ogenServer))
 
-	clk := clock.Real{}
 	expenses := service.NewExpenseService(pool)
 	dialogAgent := agent.New(
 		agent.NewClient(cfg.LLM, clk),

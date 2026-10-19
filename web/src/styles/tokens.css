@@ -1,0 +1,32 @@
+:root {
+  --bg: #f2f2f2;
+  --surface: #ffffff;
+  --text: #0a0a0a;
+  --text-secondary: #8c8c8c;
+  --border: #e6e6e6;
+  --divider: #f0f0f0;
+  --row-hover: #fafafa;
+  --accent: #85b5f4;
+  --accent-text: #0a0a0a;
+  --danger: #e5463c;
+
+  --cat-food: #ff9f0a;
+  --cat-transport: #4e7cff;
+  --cat-housing: #9b6dff;
+  --cat-health: #2dc97e;
+  --cat-shopping: #00c2c7;
+  --cat-other: #8c8c8c;
+  --cat-fun: #ff5c8a;
+
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 4%);
+
+  --cat-food-soft: color-mix(in srgb, var(--cat-food) 12%, transparent);
+  --cat-transport-soft: color-mix(in srgb, var(--cat-transport) 12%, transparent);
+  --cat-housing-soft: color-mix(in srgb, var(--cat-housing) 12%, transparent);
+  --cat-health-soft: color-mix(in srgb, var(--cat-health) 12%, transparent);
+  --cat-shopping-soft: color-mix(in srgb, var(--cat-shopping) 12%, transparent);
+  --cat-other-soft: color-mix(in srgb, var(--cat-other) 12%, transparent);
+  --cat-fun-soft: color-mix(in srgb, var(--cat-fun) 12%, transparent);
+}

@@ -555,6 +555,14 @@ type GetExpenseNotFound Error
 
 func (*GetExpenseNotFound) getExpenseRes() {}
 
+type GetExpensesSummaryBadRequest Error
+
+func (*GetExpensesSummaryBadRequest) getExpensesSummaryRes() {}
+
+type GetExpensesSummaryInternalServerError Error
+
+func (*GetExpensesSummaryInternalServerError) getExpensesSummaryRes() {}
+
 type ListExpensesBadRequest Error
 
 func (*ListExpensesBadRequest) listExpensesRes() {}
@@ -826,6 +834,241 @@ func (*PatchExpenseInternalServerError) patchExpenseRes() {}
 type PatchExpenseNotFound Error
 
 func (*PatchExpenseNotFound) patchExpenseRes() {}
+
+// Ref: #/components/schemas/SummaryItem
+type SummaryItem struct {
+	Category SummaryItemCategory `json:"category"`
+	// Русское название для отображения.
+	CategoryName SummaryItemCategoryName `json:"category_name"`
+	// Сумма трат категории за период в копейках.
+	TotalMinor int64 `json:"total_minor"`
+	// Количество трат категории за период.
+	ExpensesCount int `json:"expenses_count"`
+}
+
+// GetCategory returns the value of Category.
+func (s *SummaryItem) GetCategory() SummaryItemCategory {
+	return s.Category
+}
+
+// GetCategoryName returns the value of CategoryName.
+func (s *SummaryItem) GetCategoryName() SummaryItemCategoryName {
+	return s.CategoryName
+}
+
+// GetTotalMinor returns the value of TotalMinor.
+func (s *SummaryItem) GetTotalMinor() int64 {
+	return s.TotalMinor
+}
+
+// GetExpensesCount returns the value of ExpensesCount.
+func (s *SummaryItem) GetExpensesCount() int {
+	return s.ExpensesCount
+}
+
+// SetCategory sets the value of Category.
+func (s *SummaryItem) SetCategory(val SummaryItemCategory) {
+	s.Category = val
+}
+
+// SetCategoryName sets the value of CategoryName.
+func (s *SummaryItem) SetCategoryName(val SummaryItemCategoryName) {
+	s.CategoryName = val
+}
+
+// SetTotalMinor sets the value of TotalMinor.
+func (s *SummaryItem) SetTotalMinor(val int64) {
+	s.TotalMinor = val
+}
+
+// SetExpensesCount sets the value of ExpensesCount.
+func (s *SummaryItem) SetExpensesCount(val int) {
+	s.ExpensesCount = val
+}
+
+type SummaryItemCategory string
+
+const (
+	SummaryItemCategoryFood          SummaryItemCategory = "food"
+	SummaryItemCategoryTransport     SummaryItemCategory = "transport"
+	SummaryItemCategoryHousing       SummaryItemCategory = "housing"
+	SummaryItemCategoryEntertainment SummaryItemCategory = "entertainment"
+	SummaryItemCategoryHealth        SummaryItemCategory = "health"
+	SummaryItemCategoryShopping      SummaryItemCategory = "shopping"
+	SummaryItemCategoryOther         SummaryItemCategory = "other"
+)
+
+// AllValues returns all SummaryItemCategory values.
+func (SummaryItemCategory) AllValues() []SummaryItemCategory {
+	return []SummaryItemCategory{
+		SummaryItemCategoryFood,
+		SummaryItemCategoryTransport,
+		SummaryItemCategoryHousing,
+		SummaryItemCategoryEntertainment,
+		SummaryItemCategoryHealth,
+		SummaryItemCategoryShopping,
+		SummaryItemCategoryOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SummaryItemCategory) MarshalText() ([]byte, error) {
+	switch s {
+	case SummaryItemCategoryFood:
+		return []byte(s), nil
+	case SummaryItemCategoryTransport:
+		return []byte(s), nil
+	case SummaryItemCategoryHousing:
+		return []byte(s), nil
+	case SummaryItemCategoryEntertainment:
+		return []byte(s), nil
+	case SummaryItemCategoryHealth:
+		return []byte(s), nil
+	case SummaryItemCategoryShopping:
+		return []byte(s), nil
+	case SummaryItemCategoryOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SummaryItemCategory) UnmarshalText(data []byte) error {
+	switch SummaryItemCategory(data) {
+	case SummaryItemCategoryFood:
+		*s = SummaryItemCategoryFood
+		return nil
+	case SummaryItemCategoryTransport:
+		*s = SummaryItemCategoryTransport
+		return nil
+	case SummaryItemCategoryHousing:
+		*s = SummaryItemCategoryHousing
+		return nil
+	case SummaryItemCategoryEntertainment:
+		*s = SummaryItemCategoryEntertainment
+		return nil
+	case SummaryItemCategoryHealth:
+		*s = SummaryItemCategoryHealth
+		return nil
+	case SummaryItemCategoryShopping:
+		*s = SummaryItemCategoryShopping
+		return nil
+	case SummaryItemCategoryOther:
+		*s = SummaryItemCategoryOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Русское название для отображения.
+type SummaryItemCategoryName string
+
+const (
+	SummaryItemCategoryName_0 SummaryItemCategoryName = "еда"
+	SummaryItemCategoryName_1 SummaryItemCategoryName = "транспорт"
+	SummaryItemCategoryName_2 SummaryItemCategoryName = "жильё"
+	SummaryItemCategoryName_3 SummaryItemCategoryName = "развлечения"
+	SummaryItemCategoryName_4 SummaryItemCategoryName = "здоровье"
+	SummaryItemCategoryName_5 SummaryItemCategoryName = "покупки"
+	SummaryItemCategoryName_6 SummaryItemCategoryName = "другое"
+)
+
+// AllValues returns all SummaryItemCategoryName values.
+func (SummaryItemCategoryName) AllValues() []SummaryItemCategoryName {
+	return []SummaryItemCategoryName{
+		SummaryItemCategoryName_0,
+		SummaryItemCategoryName_1,
+		SummaryItemCategoryName_2,
+		SummaryItemCategoryName_3,
+		SummaryItemCategoryName_4,
+		SummaryItemCategoryName_5,
+		SummaryItemCategoryName_6,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SummaryItemCategoryName) MarshalText() ([]byte, error) {
+	switch s {
+	case SummaryItemCategoryName_0:
+		return []byte(s), nil
+	case SummaryItemCategoryName_1:
+		return []byte(s), nil
+	case SummaryItemCategoryName_2:
+		return []byte(s), nil
+	case SummaryItemCategoryName_3:
+		return []byte(s), nil
+	case SummaryItemCategoryName_4:
+		return []byte(s), nil
+	case SummaryItemCategoryName_5:
+		return []byte(s), nil
+	case SummaryItemCategoryName_6:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SummaryItemCategoryName) UnmarshalText(data []byte) error {
+	switch SummaryItemCategoryName(data) {
+	case SummaryItemCategoryName_0:
+		*s = SummaryItemCategoryName_0
+		return nil
+	case SummaryItemCategoryName_1:
+		*s = SummaryItemCategoryName_1
+		return nil
+	case SummaryItemCategoryName_2:
+		*s = SummaryItemCategoryName_2
+		return nil
+	case SummaryItemCategoryName_3:
+		*s = SummaryItemCategoryName_3
+		return nil
+	case SummaryItemCategoryName_4:
+		*s = SummaryItemCategoryName_4
+		return nil
+	case SummaryItemCategoryName_5:
+		*s = SummaryItemCategoryName_5
+		return nil
+	case SummaryItemCategoryName_6:
+		*s = SummaryItemCategoryName_6
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/SummaryResponse
+type SummaryResponse struct {
+	// По одной записи на категорию с тратами за период
+	// (сумма/количество — в SQL).
+	Items []SummaryItem `json:"items"`
+	// Итог периода в копейках.
+	GrandTotalMinor int64 `json:"grand_total_minor"`
+}
+
+// GetItems returns the value of Items.
+func (s *SummaryResponse) GetItems() []SummaryItem {
+	return s.Items
+}
+
+// GetGrandTotalMinor returns the value of GrandTotalMinor.
+func (s *SummaryResponse) GetGrandTotalMinor() int64 {
+	return s.GrandTotalMinor
+}
+
+// SetItems sets the value of Items.
+func (s *SummaryResponse) SetItems(val []SummaryItem) {
+	s.Items = val
+}
+
+// SetGrandTotalMinor sets the value of GrandTotalMinor.
+func (s *SummaryResponse) SetGrandTotalMinor(val int64) {
+	s.GrandTotalMinor = val
+}
+
+func (*SummaryResponse) getExpensesSummaryRes() {}
 
 // Ref: #/components/schemas/User
 type User struct {

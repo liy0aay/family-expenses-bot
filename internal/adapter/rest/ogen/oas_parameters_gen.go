@@ -145,6 +145,175 @@ func decodeGetExpenseParams(args [1]string, argsEscaped bool, r *http.Request) (
 	return params, nil
 }
 
+// GetExpensesSummaryParams is parameters of getExpensesSummary operation.
+type GetExpensesSummaryParams struct {
+	// Фильтр по члену семьи (опционально).
+	UserID OptInt64 `json:",omitempty,omitzero"`
+	// Начало периода (включительно).
+	DateFrom OptDate `json:",omitempty,omitzero"`
+	// Конец периода (включительно).
+	DateTo OptDate `json:",omitempty,omitzero"`
+}
+
+func unpackGetExpensesSummaryParams(packed middleware.Parameters) (params GetExpensesSummaryParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "user_id",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.UserID = v.(OptInt64)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "date_from",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.DateFrom = v.(OptDate)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "date_to",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.DateTo = v.(OptDate)
+		}
+	}
+	return params
+}
+
+func decodeGetExpensesSummaryParams(args [0]string, argsEscaped bool, r *http.Request) (params GetExpensesSummaryParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: user_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "user_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotUserIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotUserIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.UserID.SetTo(paramsDotUserIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "user_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: date_from.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "date_from",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotDateFromVal time.Time
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToDate(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotDateFromVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.DateFrom.SetTo(paramsDotDateFromVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "date_from",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: date_to.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "date_to",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotDateToVal time.Time
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToDate(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotDateToVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.DateTo.SetTo(paramsDotDateToVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "date_to",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // ListExpensesParams is parameters of listExpenses operation.
 type ListExpensesParams struct {
 	// Фильтр по члену семьи (опционально).

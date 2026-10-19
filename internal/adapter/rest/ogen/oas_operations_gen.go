@@ -6,10 +6,11 @@ package ogen
 type OperationName = string
 
 const (
-	CreateExpenseOperation OperationName = "CreateExpense"
-	DeleteExpenseOperation OperationName = "DeleteExpense"
-	GetExpenseOperation    OperationName = "GetExpense"
-	ListExpensesOperation  OperationName = "ListExpenses"
-	ListUsersOperation     OperationName = "ListUsers"
-	PatchExpenseOperation  OperationName = "PatchExpense"
+	CreateExpenseOperation      OperationName = "CreateExpense"
+	DeleteExpenseOperation      OperationName = "DeleteExpense"
+	GetExpenseOperation         OperationName = "GetExpense"
+	GetExpensesSummaryOperation OperationName = "GetExpensesSummary"
+	ListExpensesOperation       OperationName = "ListExpenses"
+	ListUsersOperation          OperationName = "ListUsers"
+	PatchExpenseOperation       OperationName = "PatchExpense"
 )
