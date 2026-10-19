@@ -375,11 +375,6 @@ func decodeListExpensesParams(args [0]string, argsEscaped bool, r *http.Request)
 			Err:  err,
 		}
 	}
-	// Set default value for query: limit.
-	{
-		val := int(200)
-		params.Limit.SetTo(val)
-	}
 	// Decode query: limit.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{

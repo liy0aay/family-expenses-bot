@@ -68,7 +68,6 @@ paths:
             type: integer
             minimum: 1
             maximum: 500
-            default: 200
       responses:
         '200':
           description: 'Список трат (сортировка: spent_at DESC, id DESC)'

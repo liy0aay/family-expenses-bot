@@ -6,36 +6,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/liy0aay/family-expenses-bot/internal/adapter/rest"
 	ogen "github.com/liy0aay/family-expenses-bot/internal/adapter/rest/ogen"
 	"github.com/liy0aay/family-expenses-bot/internal/config"
+	"github.com/liy0aay/family-expenses-bot/internal/service"
 	"github.com/liy0aay/family-expenses-bot/internal/storage/postgres"
 )
-
-type stubHandler struct{}
-
-func (stubHandler) ListUsers(context.Context) (*ogen.UserList, error) {
-	return &ogen.UserList{}, nil
-}
-
-func (stubHandler) ListExpenses(context.Context, ogen.ListExpensesParams) (ogen.ListExpensesRes, error) {
-	return &ogen.ExpenseList{}, nil
-}
-
-func (stubHandler) CreateExpense(context.Context, *ogen.ExpenseCreate) (ogen.CreateExpenseRes, error) {
-	return &ogen.Expense{}, nil
-}
-
-func (stubHandler) GetExpense(context.Context, ogen.GetExpenseParams) (ogen.GetExpenseRes, error) {
-	return &ogen.Expense{}, nil
-}
-
-func (stubHandler) PatchExpense(context.Context, *ogen.ExpensePatch, ogen.PatchExpenseParams) (ogen.PatchExpenseRes, error) {
-	return &ogen.Expense{}, nil
-}
-
-func (stubHandler) DeleteExpense(context.Context, ogen.DeleteExpenseParams) (ogen.DeleteExpenseRes, error) {
-	return &ogen.DeleteExpenseNoContent{}, nil
-}
 
 func main() {
 	ctx := context.Background()
@@ -60,7 +36,14 @@ func main() {
 	}
 	slog.Info("migrations applied", "version", version)
 
-	ogenServer, err := ogen.NewServer(stubHandler{})
+	ogenServer, err := ogen.NewServer(
+		rest.NewHandlers(
+			service.NewExpenseService(pool),
+			service.NewUserService(pool),
+			cfg.ExpensesListLimit,
+		),
+		ogen.WithErrorHandler(rest.NewErrorHandler()),
+	)
 	if err != nil {
 		slog.Error("ogen server creation failed", "err", err)
 		os.Exit(1)

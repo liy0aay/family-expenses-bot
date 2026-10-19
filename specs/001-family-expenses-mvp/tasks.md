@@ -31,10 +31,10 @@
 
 **Цель**: панель получает рабочий REST: список с фильтрами и полный CRUD. Зависит от T010, T012.
 
-- [ ] T013 [US5] Единый хелпер маппинга ошибок домена → HTTP (статус + `{error:{code,message}}` по contracts/errors.md; ogen-типы `*Error`) в `internal/adapter/rest/errors.go` — закрывает: FR-014, FR-019
-- [ ] T014 [US5] Хендлеры чтения: `GET /users` и `GET /expenses` (фильтры user_id/date_from/date_to/category + limit из конфига; FamilyHeadScope; `category_name` из справочника домена) в `internal/adapter/rest/handlers.go` — закрывает: US5, FR-015, FR-016
-- [ ] T015 [US6] Хендлеры записи: `POST /expenses` (обязательный user_id — выбор члена семьи), `GET/PATCH/DELETE /expenses/{expense_id}` через FamilyHeadScope в `internal/adapter/rest/handlers.go` — закрывает: US6, FR-017, FR-018
-- [ ] T016 [US5] [P] Контракт-тесты `internal/adapter/rest/rest_test.go` (httptest + PG из compose): CRUD e2e, комбинация фильтров, е/ё в query `category`, `amount_rub` «0» и «350.505» → 400 invalid_amount, неизвестная категория → 400, чужой/несуществующий id → 404 not_found; фильтры и лимит — в SQL, без постфильтрации (SC-005: code review запросов sqlc + разовый EXPLAIN) — закрывает: US5, US6, FR-016–FR-019; SC-003, SC-005
+- [x] T013 [US5] Единый хелпер маппинга ошибок домена → HTTP (статус + `{error:{code,message}}` по contracts/errors.md; ogen-типы `*Error`) в `internal/adapter/rest/errors.go` — закрывает: FR-014, FR-019
+- [x] T014 [US5] Хендлеры чтения: `GET /users` и `GET /expenses` (фильтры user_id/date_from/date_to/category + limit из конфига; FamilyHeadScope; `category_name` из справочника домена) в `internal/adapter/rest/handlers.go` — закрывает: US5, FR-015, FR-016
+- [x] T015 [US6] Хендлеры записи: `POST /expenses` (обязательный user_id — выбор члена семьи), `GET/PATCH/DELETE /expenses/{expense_id}` через FamilyHeadScope в `internal/adapter/rest/handlers.go` — закрывает: US6, FR-017, FR-018
+- [x] T016 [US5] [P] Контракт-тесты `internal/adapter/rest/rest_test.go` (httptest + PG из compose): CRUD e2e, комбинация фильтров, е/ё в query `category`, `amount_rub` «0» и «350.505» → 400 invalid_amount, неизвестная категория → 400, чужой/несуществующий id → 404 not_found; фильтры и лимит — в SQL, без постфильтрации (SC-005: code review запросов sqlc + разовый EXPLAIN) — закрывает: US5, US6, FR-016–FR-019; SC-003, SC-005
 
 **Checkpoint**: по quickstart.md сценарий 2 проходит целиком; панель может быть написана только против этого API.
 
