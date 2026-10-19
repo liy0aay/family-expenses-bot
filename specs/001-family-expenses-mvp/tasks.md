@@ -21,8 +21,8 @@
 - [x] T007 sqlc: `internal/storage/postgres/query.sql` + `sqlc.yaml` — upsert пользователей (ON CONFLICT), CRUD трат, фильтры (user_id/date_from/date_to/category), сводка (SUM/COUNT), «последняя» по created_at LIMIT 1 — закрывает: FR-001, FR-007, FR-008, FR-009
 - [x] T008 Пул pgx/v5 и применение goose-миграций при старте в `internal/storage/postgres/postgres.go` — закрывает: FR-020
 - [x] T009 [US1] [P] Тесты `internal/domain/money_test.go` и `category_test.go`: суммы 350, 350.5, 350.50, 0.01 — ок; 350.505 → invalid_amount; е/ё («жилье»/«Жильё» → housing); неизвестная категория → ошибка — закрывает: US1, FR-004, FR-006; SC-003
-- [ ] T010 [US1] `internal/service/expense.go` (+`user.go`): Create/List/Get/Patch/Delete/Summary/Last с валидацией домена и правами в одном месте: `UserScope` (бот — строго свой user_id из ctx) и `FamilyHeadScope` (панель — все траты, user_id как опциональный фильтр); чужая трата → not_found — закрывает: US1–US6, FR-011, FR-019; принцип I
-- [ ] T011 [US1] [P] Тесты scoping `internal/service/expense_test.go` (PG из compose): бот видит только своё, панель — всё; обращение к чужому id → not_found без раскрытия данных — закрывает: FR-011, FR-019; SC-004
+- [x] T010 [US1] `internal/service/expense.go` (+`user.go`): Create/List/Get/Patch/Delete/Summary/Last с валидацией домена и правами в одном месте: `UserScope` (бот — строго свой user_id из ctx) и `FamilyHeadScope` (панель — все траты, user_id как опциональный фильтр); чужая трата → not_found — закрывает: US1–US6, FR-011, FR-019; принцип I
+- [x] T011 [US1] [P] Тесты scoping `internal/service/expense_test.go` (PG из compose): бот видит только своё, панель — всё; обращение к чужому id → not_found без раскрытия данных — закрывает: FR-011, FR-019; SC-004
 - [x] T012 ogen в прод-режиме: зафиксировать версию в `go.mod`, таргет `make generate` из `api/openapi.yaml`, повторная генерация даёт пустой diff; монтирование по итогам спайка (ADR-008): `mux.Handle("/api/v1/", http.StripPrefix("/api/v1", ogenServer))` + `GET /healthz` на stdlib mux — закрывает: FR-017; ADR-002, ADR-008
 
 **Checkpoint**: `make test` зелёный на домене и scoping; схема БД и кодогенерация воспроизводимы.

@@ -62,3 +62,8 @@ FROM expenses
 WHERE (sqlc.narg('user_id')::BIGINT IS NULL OR user_id = sqlc.narg('user_id'))
 ORDER BY created_at DESC, id DESC
 LIMIT 1;
+
+-- name: ListUsers :many
+SELECT id, username, first_name, created_at, updated_at
+FROM users
+ORDER BY id;

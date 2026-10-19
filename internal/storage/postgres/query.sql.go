@@ -172,6 +172,38 @@ func (q *Queries) ListExpenses(ctx context.Context, arg ListExpensesParams) ([]E
 	return items, nil
 }
 
+const listUsers = `-- name: ListUsers :many
+SELECT id, username, first_name, created_at, updated_at
+FROM users
+ORDER BY id
+`
+
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.FirstName,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const summaryByCategory = `-- name: SummaryByCategory :many
 SELECT
     category,
