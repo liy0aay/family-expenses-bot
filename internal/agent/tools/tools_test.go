@@ -28,7 +28,7 @@ func TestAmountArgAcceptsStringAndNumber(t *testing.T) {
 			}
 			got, err := amountArg(args)
 			if tc.wantErr != "" {
-				var te *ToolError
+				var te *agent.ToolError
 				if !errors.As(err, &te) || te.Code != tc.wantErr {
 					t.Fatalf("amountArg(%s) error = %v, want code %s", tc.raw, err, tc.wantErr)
 				}
@@ -50,7 +50,7 @@ func TestAmountArgMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = amountArg(args)
-	var te *ToolError
+	var te *agent.ToolError
 	if !errors.As(err, &te) || te.Code != "bad_request" {
 		t.Fatalf("missing amount_rub error = %v, want code bad_request", err)
 	}

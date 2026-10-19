@@ -16,7 +16,20 @@ import (
 	"github.com/liy0aay/family-expenses-bot/internal/domain"
 )
 
-const llmHTTPTimeout = 60 * time.Second
+// Non-streaming chat/completions sends headers only after the whole completion
+// is generated; 60s proved not enough behind a VPN gateway
+// (incident: Client.Timeout exceeded while awaiting headers).
+const llmHTTPTimeout = 120 * time.Second
+
+// ToolError carries a domain code; the orchestrator returns it to the LLM as {error:{code,message}}.
+type ToolError struct {
+	Code    string
+	Message string
+}
+
+func (e *ToolError) Error() string {
+	return e.Code + ": " + e.Message
+}
 
 type Role string
 

@@ -127,7 +127,7 @@ WHERE ($1::BIGINT IS NULL OR user_id = $1)
   AND ($4::TEXT IS NULL OR category = $4)
   -- @text arrives pre-escaped: %, _, \ are made literal by service textFilter
   AND ($5::TEXT IS NULL OR comment ILIKE '%' || $5 || '%')
-ORDER BY created_at DESC
+ORDER BY spent_at DESC, id DESC
 LIMIT $6::BIGINT
 `
 
@@ -140,6 +140,7 @@ type ListExpensesParams struct {
 	Lim      int64
 }
 
+// порядок трат, а не ввода; id — тайбрейк порядка вставки внутри дня (openapi: spent_at DESC, id DESC)
 func (q *Queries) ListExpenses(ctx context.Context, arg ListExpensesParams) ([]Expense, error) {
 	rows, err := q.db.Query(ctx, listExpenses,
 		arg.UserID,

@@ -233,16 +233,16 @@ func TestExpensesFilters(t *testing.T) {
 		t.Fatalf("all: want 4, got %d", len(items))
 	}
 	if items := listExpenses(t, ts, "?limit=10"); items[0].ID != bobHousing.ID {
-		t.Fatalf("list must be sorted by created_at desc, first=%d want %d", items[0].ID, bobHousing.ID)
+		t.Fatalf("list must be sorted by spent_at desc, first=%d want %d", items[0].ID, bobHousing.ID)
 	}
 
-	if items := listExpenses(t, ts, "?user_id=101&limit=10"); len(items) != 2 || items[0].ID != aliceTransport.ID || items[1].ID != aliceFood.ID {
+	if items := listExpenses(t, ts, "?user_id=101&limit=10"); len(items) != 2 || items[0].ID != aliceFood.ID || items[1].ID != aliceTransport.ID {
 		t.Fatalf("user filter: %+v", items)
 	}
 	if items := listExpenses(t, ts, "?date_from=2026-10-15&date_to=2026-10-19&limit=10"); len(items) != 2 {
 		t.Fatalf("date range filter: %+v", items)
 	}
-	if items := listExpenses(t, ts, "?category=food&limit=10"); len(items) != 2 || items[0].ID != bobFood.ID || items[1].ID != aliceFood.ID {
+	if items := listExpenses(t, ts, "?category=food&limit=10"); len(items) != 2 || items[0].ID != aliceFood.ID || items[1].ID != bobFood.ID {
 		t.Fatalf("category filter: %+v", items)
 	}
 	if items := listExpenses(t, ts, "?category=жилье&limit=10"); len(items) != 1 || items[0].ID != bobHousing.ID {

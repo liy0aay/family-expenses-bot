@@ -21,7 +21,8 @@ WHERE (sqlc.narg('user_id')::BIGINT IS NULL OR user_id = sqlc.narg('user_id'))
   AND (sqlc.narg('category')::TEXT IS NULL OR category = sqlc.narg('category'))
   -- @text arrives pre-escaped: %, _, \ are made literal by service textFilter
   AND (sqlc.narg('text')::TEXT IS NULL OR comment ILIKE '%' || sqlc.narg('text') || '%')
-ORDER BY created_at DESC
+-- порядок трат, а не ввода; id — тайбрейк порядка вставки внутри дня (openapi: spent_at DESC, id DESC)
+ORDER BY spent_at DESC, id DESC
 LIMIT @lim::BIGINT;
 
 -- name: GetExpense :one

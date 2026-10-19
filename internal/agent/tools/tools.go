@@ -25,17 +25,7 @@ func New(expenses *service.ExpenseService, clk clock.Clock) *Tools {
 	return &Tools{expenses: expenses, clk: clk}
 }
 
-// the orchestrator returns it to the LLM as {error:{code,message}}.
-type ToolError struct {
-	Code    string
-	Message string
-}
-
-func (e *ToolError) Error() string {
-	return e.Code + ": " + e.Message
-}
-
-func toolError(err error) *ToolError {
+func toolError(err error) *agent.ToolError {
 	code := "bad_request"
 	switch {
 	case errors.Is(err, domain.ErrInvalidAmount):
@@ -49,7 +39,7 @@ func toolError(err error) *ToolError {
 	case errors.Is(err, domain.ErrInternal):
 		code = "internal"
 	}
-	return &ToolError{Code: code, Message: err.Error()}
+	return &agent.ToolError{Code: code, Message: err.Error()}
 }
 
 func (t *Tools) Definitions() []agent.Tool {
@@ -150,7 +140,7 @@ func categorySchema() map[string]any {
 func (t *Tools) Dispatch(ctx context.Context, name, arguments string) (any, error) {
 	args, err := agent.ParseToolArguments(arguments)
 	if err != nil {
-		return nil, err
+		return nil, toolError(err)
 	}
 	switch name {
 	case "add_expense":
