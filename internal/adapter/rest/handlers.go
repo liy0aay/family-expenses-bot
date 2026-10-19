@@ -57,11 +57,11 @@ func (h *Handlers) ListExpenses(ctx context.Context, params ogen.ListExpensesPar
 
 	list, err := h.expenses.List(service.WithFamilyHeadScope(ctx, filter), in)
 	if err != nil {
-		return errorResponse(err), nil
+		return listExpensesError(err), nil
 	}
 	names, err := h.userNames(ctx)
 	if err != nil {
-		return errorResponse(err), nil
+		return listExpensesError(err), nil
 	}
 	items := make([]ogen.Expense, 0, len(list))
 	for _, e := range list {
@@ -73,7 +73,7 @@ func (h *Handlers) ListExpenses(ctx context.Context, params ogen.ListExpensesPar
 func (h *Handlers) CreateExpense(ctx context.Context, req *ogen.ExpenseCreate) (ogen.CreateExpenseRes, error) {
 	amount, err := domain.RublesToKopecks(req.AmountRub)
 	if err != nil {
-		return errorResponse(err), nil
+		return createExpenseError(err), nil
 	}
 	in := service.CreateInput{
 		AmountMinor: amount,
@@ -86,11 +86,11 @@ func (h *Handlers) CreateExpense(ctx context.Context, req *ogen.ExpenseCreate) (
 
 	e, err := h.expenses.Create(service.WithFamilyHeadScope(ctx, &req.UserID), in)
 	if err != nil {
-		return errorResponse(err), nil
+		return createExpenseError(err), nil
 	}
 	names, err := h.userNames(ctx)
 	if err != nil {
-		return errorResponse(err), nil
+		return createExpenseError(err), nil
 	}
 	return toOgenExpense(e, names), nil
 }
@@ -98,11 +98,11 @@ func (h *Handlers) CreateExpense(ctx context.Context, req *ogen.ExpenseCreate) (
 func (h *Handlers) GetExpense(ctx context.Context, params ogen.GetExpenseParams) (ogen.GetExpenseRes, error) {
 	e, err := h.expenses.Get(service.WithFamilyHeadScope(ctx, nil), params.ExpenseID)
 	if err != nil {
-		return errorResponse(err), nil
+		return getExpenseError(err), nil
 	}
 	names, err := h.userNames(ctx)
 	if err != nil {
-		return errorResponse(err), nil
+		return getExpenseError(err), nil
 	}
 	return toOgenExpense(e, names), nil
 }
@@ -139,25 +139,54 @@ func (h *Handlers) PatchExpense(ctx context.Context, req *ogen.ExpensePatch, par
 
 func (h *Handlers) DeleteExpense(ctx context.Context, params ogen.DeleteExpenseParams) (ogen.DeleteExpenseRes, error) {
 	if err := h.expenses.Delete(service.WithFamilyHeadScope(ctx, nil), params.ExpenseID); err != nil {
-		return errorResponse(err), nil
+		return deleteExpenseError(err), nil
 	}
 	return &ogen.DeleteExpenseNoContent{}, nil
 }
 
-// the wire status is fixed by the generated encoder per union variant
-// (create/list → 400, get/delete → 404); internal errors leave with the
-// operation's declared status, the code field stays internal.
-func errorResponse(err error) *ogen.Error {
-	payload, _ := errorPayload(err)
-	return &ogen.Error{Error: payload}
+// the generated encoder writes each union variant's declared wire status.
+func listExpensesError(err error) ogen.ListExpensesRes {
+	payload, status := errorPayload(err)
+	if status == http.StatusInternalServerError {
+		return &ogen.ListExpensesInternalServerError{Error: payload}
+	}
+	return &ogen.ListExpensesBadRequest{Error: payload}
+}
+
+func createExpenseError(err error) ogen.CreateExpenseRes {
+	payload, status := errorPayload(err)
+	if status == http.StatusInternalServerError {
+		return &ogen.CreateExpenseInternalServerError{Error: payload}
+	}
+	return &ogen.CreateExpenseBadRequest{Error: payload}
+}
+
+func getExpenseError(err error) ogen.GetExpenseRes {
+	payload, status := errorPayload(err)
+	if status == http.StatusInternalServerError {
+		return &ogen.GetExpenseInternalServerError{Error: payload}
+	}
+	return &ogen.GetExpenseNotFound{Error: payload}
+}
+
+func deleteExpenseError(err error) ogen.DeleteExpenseRes {
+	payload, status := errorPayload(err)
+	if status == http.StatusInternalServerError {
+		return &ogen.DeleteExpenseInternalServerError{Error: payload}
+	}
+	return &ogen.DeleteExpenseNotFound{Error: payload}
 }
 
 func patchErrorResponse(err error) ogen.PatchExpenseRes {
 	payload, status := errorPayload(err)
-	if status == http.StatusNotFound {
+	switch status {
+	case http.StatusNotFound:
 		return &ogen.PatchExpenseNotFound{Error: payload}
+	case http.StatusInternalServerError:
+		return &ogen.PatchExpenseInternalServerError{Error: payload}
+	default:
+		return &ogen.PatchExpenseBadRequest{Error: payload}
 	}
-	return &ogen.PatchExpenseBadRequest{Error: payload}
 }
 
 func (h *Handlers) userNames(ctx context.Context) (map[int64]string, error) {

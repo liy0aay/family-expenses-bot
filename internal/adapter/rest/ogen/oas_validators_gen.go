@@ -9,6 +9,38 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+func (s *CreateExpenseBadRequest) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CreateExpenseInternalServerError) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *DeleteExpenseInternalServerError) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *DeleteExpenseNotFound) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Error) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -274,7 +306,47 @@ func (s *ExpensePatch) Validate() error {
 	return nil
 }
 
+func (s *GetExpenseInternalServerError) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *GetExpenseNotFound) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ListExpensesBadRequest) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ListExpensesInternalServerError) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *PatchExpenseBadRequest) Validate() error {
+	alias := (*Error)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *PatchExpenseInternalServerError) Validate() error {
 	alias := (*Error)(s)
 	if err := alias.Validate(); err != nil {
 		return err

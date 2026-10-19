@@ -38,7 +38,7 @@ type CreateInput struct {
 
 // Absent fields (nil / empty string) leave the stored value unchanged,
 // matching the sqlc narg/COALESCE update; a non-nil Comment pointing at ""
-// clears the comment.
+// clears the comment — stored as NULL, same as "no comment" from Create.
 type PatchInput struct {
 	AmountMinor *int64
 	Category    string
@@ -50,6 +50,7 @@ type ListInput struct {
 	DateFrom string // YYYY-MM-DD, empty = unbounded
 	DateTo   string
 	Category string
+	Text     string // substring match against comment, empty = no filter
 	Limit    int
 }
 
@@ -140,6 +141,7 @@ func (s *ExpenseService) List(ctx context.Context, in ListInput) ([]Expense, err
 		DateFrom: dateFrom,
 		DateTo:   dateTo,
 		Category: category,
+		Text:     textFilter(in.Text),
 		Lim:      int64(in.Limit),
 	})
 	if err != nil {
@@ -204,7 +206,6 @@ func (s *ExpenseService) Patch(ctx context.Context, id int64, in PatchInput) (Ex
 		if utf8.RuneCountInString(*in.Comment) > maxCommentLen {
 			return Expense{}, fmt.Errorf("%w: comment is longer than %d characters", domain.ErrValidation, maxCommentLen)
 		}
-		// an explicitly provided empty string clears the comment; NULL would mean "keep" to COALESCE
 		comment = pgtype.Text{String: *in.Comment, Valid: true}
 	}
 
@@ -320,6 +321,18 @@ func categoryFilter(raw string) (pgtype.Text, error) {
 		return pgtype.Text{}, err
 	}
 	return pgtype.Text{String: slug, Valid: true}, nil
+}
+
+// likeEscaper: % and _ are ILIKE wildcards, \ is the escape char — escape them
+// so the search text matches literally.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+func textFilter(raw string) pgtype.Text {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return pgtype.Text{}
+	}
+	return pgtype.Text{String: likeEscaper.Replace(trimmed), Valid: true}
 }
 
 func nullableInt8(p *int64) pgtype.Int8 {

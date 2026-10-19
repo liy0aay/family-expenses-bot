@@ -16,6 +16,7 @@ func TestRublesToKopecks(t *testing.T) {
 	}{
 		{"whole rubles", "350", 35000, nil},
 		{"one decimal digit", "350.5", 35050, nil},
+		{"trailing zero fraction", "123.0", 12300, nil},
 		{"two decimal digits", "350.50", 35050, nil},
 		{"leading zero in kopecks", "350.05", 35005, nil},
 		{"minimum amount", "0.01", 1, nil},

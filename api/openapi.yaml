@@ -81,6 +81,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка (internal)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       operationId: createExpense
       tags: [expenses]
@@ -100,6 +106,12 @@ paths:
                 $ref: '#/components/schemas/Expense'
         '400':
           description: invalid_amount / invalid_category / invalid_date / bad_request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка (internal)
           content:
             application/json:
               schema:
@@ -125,6 +137,12 @@ paths:
                 $ref: '#/components/schemas/Expense'
         '404':
           description: not_found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка (internal)
           content:
             application/json:
               schema:
@@ -158,6 +176,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка (internal)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       operationId: deleteExpense
       tags: [expenses]
@@ -167,6 +191,12 @@ paths:
           description: Удалена
         '404':
           description: not_found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка (internal)
           content:
             application/json:
               schema:

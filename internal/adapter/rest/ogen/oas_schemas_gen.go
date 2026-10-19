@@ -8,10 +8,26 @@ import (
 	"github.com/go-faster/errors"
 )
 
+type CreateExpenseBadRequest Error
+
+func (*CreateExpenseBadRequest) createExpenseRes() {}
+
+type CreateExpenseInternalServerError Error
+
+func (*CreateExpenseInternalServerError) createExpenseRes() {}
+
+type DeleteExpenseInternalServerError Error
+
+func (*DeleteExpenseInternalServerError) deleteExpenseRes() {}
+
 // DeleteExpenseNoContent is response for DeleteExpense operation.
 type DeleteExpenseNoContent struct{}
 
 func (*DeleteExpenseNoContent) deleteExpenseRes() {}
+
+type DeleteExpenseNotFound Error
+
+func (*DeleteExpenseNotFound) deleteExpenseRes() {}
 
 // Ref: #/components/schemas/Error
 type Error struct {
@@ -27,11 +43,6 @@ func (s *Error) GetError() ErrorError {
 func (s *Error) SetError(val ErrorError) {
 	s.Error = val
 }
-
-func (*Error) createExpenseRes() {}
-func (*Error) deleteExpenseRes() {}
-func (*Error) getExpenseRes()    {}
-func (*Error) listExpensesRes()  {}
 
 type ErrorError struct {
 	Code    ErrorErrorCode `json:"code"`
@@ -536,6 +547,22 @@ func (s *ExpensePatch) SetComment(val OptNilString) {
 	s.Comment = val
 }
 
+type GetExpenseInternalServerError Error
+
+func (*GetExpenseInternalServerError) getExpenseRes() {}
+
+type GetExpenseNotFound Error
+
+func (*GetExpenseNotFound) getExpenseRes() {}
+
+type ListExpensesBadRequest Error
+
+func (*ListExpensesBadRequest) listExpensesRes() {}
+
+type ListExpensesInternalServerError Error
+
+func (*ListExpensesInternalServerError) listExpensesRes() {}
+
 // NewOptDate returns new OptDate with value set to v.
 func NewOptDate(v time.Time) OptDate {
 	return OptDate{
@@ -791,6 +818,10 @@ func (o OptString) Or(d string) string {
 type PatchExpenseBadRequest Error
 
 func (*PatchExpenseBadRequest) patchExpenseRes() {}
+
+type PatchExpenseInternalServerError Error
+
+func (*PatchExpenseInternalServerError) patchExpenseRes() {}
 
 type PatchExpenseNotFound Error
 

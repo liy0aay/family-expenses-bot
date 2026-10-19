@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -24,9 +25,22 @@ func encodeCreateExpenseResponse(response CreateExpenseRes, w http.ResponseWrite
 
 		return nil
 
-	case *Error:
+	case *CreateExpenseBadRequest:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *CreateExpenseInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -48,9 +62,22 @@ func encodeDeleteExpenseResponse(response DeleteExpenseRes, w http.ResponseWrite
 
 		return nil
 
-	case *Error:
+	case *DeleteExpenseNotFound:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *DeleteExpenseInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -79,9 +106,22 @@ func encodeGetExpenseResponse(response GetExpenseRes, w http.ResponseWriter, spa
 
 		return nil
 
-	case *Error:
+	case *GetExpenseNotFound:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetExpenseInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -110,9 +150,22 @@ func encodeListExpensesResponse(response ListExpensesRes, w http.ResponseWriter,
 
 		return nil
 
-	case *Error:
+	case *ListExpensesBadRequest:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ListExpensesInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -169,6 +222,19 @@ func encodePatchExpenseResponse(response PatchExpenseRes, w http.ResponseWriter,
 	case *PatchExpenseNotFound:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *PatchExpenseInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
 
 		e := new(jx.Encoder)
 		response.Encode(e)

@@ -125,8 +125,10 @@ WHERE ($1::BIGINT IS NULL OR user_id = $1)
   AND ($2::DATE IS NULL OR spent_at >= $2)
   AND ($3::DATE IS NULL OR spent_at <= $3)
   AND ($4::TEXT IS NULL OR category = $4)
+  -- @text arrives pre-escaped: %, _, \ are made literal by service textFilter
+  AND ($5::TEXT IS NULL OR comment ILIKE '%' || $5 || '%')
 ORDER BY created_at DESC
-LIMIT $5::BIGINT
+LIMIT $6::BIGINT
 `
 
 type ListExpensesParams struct {
@@ -134,6 +136,7 @@ type ListExpensesParams struct {
 	DateFrom pgtype.Date
 	DateTo   pgtype.Date
 	Category pgtype.Text
+	Text     pgtype.Text
 	Lim      int64
 }
 
@@ -143,6 +146,7 @@ func (q *Queries) ListExpenses(ctx context.Context, arg ListExpensesParams) ([]E
 		arg.DateFrom,
 		arg.DateTo,
 		arg.Category,
+		arg.Text,
 		arg.Lim,
 	)
 	if err != nil {
@@ -175,11 +179,12 @@ func (q *Queries) ListExpenses(ctx context.Context, arg ListExpensesParams) ([]E
 const listUsers = `-- name: ListUsers :many
 SELECT id, username, first_name, created_at, updated_at
 FROM users
+WHERE ($1::BIGINT IS NULL OR id = $1)
 ORDER BY id
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsers)
+func (q *Queries) ListUsers(ctx context.Context, userID pgtype.Int8) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +259,7 @@ UPDATE expenses
 SET amount_minor = COALESCE($1, amount_minor),
     category     = COALESCE($2, category),
     spent_at     = COALESCE($3, spent_at),
-    comment      = COALESCE($4, comment),
+    comment      = NULLIF(COALESCE($4, comment), ''),
     updated_at   = now()
 WHERE id = $5
   AND ($6::BIGINT IS NULL OR user_id = $6)

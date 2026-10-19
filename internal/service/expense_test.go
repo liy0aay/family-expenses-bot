@@ -304,3 +304,95 @@ func TestPatchLeavesAbsentFieldsUnchanged(t *testing.T) {
 		t.Fatalf("patch zero amount: want invalid_amount, got %v", err)
 	}
 }
+
+func TestListTextFilterMatchesCommentSubstring(t *testing.T) {
+	pool := newTestPool(t)
+	seedUser(t, pool, userAlice)
+
+	mustCreate(t, pool, userAlice, service.CreateInput{AmountMinor: 35050, Category: "transport", SpentAt: "2026-10-19", Comment: "Такси в аэропорт"})
+	mustCreate(t, pool, userAlice, service.CreateInput{AmountMinor: 12000, Category: "food", SpentAt: "2026-10-18", Comment: "кофе"})
+	mustCreate(t, pool, userAlice, service.CreateInput{AmountMinor: 9900, Category: "other", SpentAt: "2026-10-17"})
+	mustCreate(t, pool, userAlice, service.CreateInput{AmountMinor: 50000, Category: "shopping", SpentAt: "2026-10-16", Comment: "скидка 50% на кофе_латте"})
+	mustCreate(t, pool, userAlice, service.CreateInput{AmountMinor: 40000, Category: "other", SpentAt: "2026-10-15", Comment: "скидка 50 рублей"})
+
+	expenses := service.NewExpenseService(pool)
+	ctx := service.WithUserScope(context.Background(), userAlice)
+
+	found, err := expenses.List(ctx, service.ListInput{Text: "такси", Limit: 10})
+	if err != nil {
+		t.Fatalf("list with text: %v", err)
+	}
+	if len(found) != 1 || found[0].Comment != "Такси в аэропорт" {
+		t.Fatalf("text filter must match comment case-insensitively, got %+v", found)
+	}
+
+	// % must be literal: as a wildcard it would also match "скидка 50 рублей"
+	percent, err := expenses.List(ctx, service.ListInput{Text: "50%", Limit: 10})
+	if err != nil {
+		t.Fatalf("list with percent: %v", err)
+	}
+	if len(percent) != 1 || percent[0].Comment != "скидка 50% на кофе_латте" {
+		t.Fatalf("%% must match literally, got %+v", percent)
+	}
+
+	// _ must be literal: as a wildcard it would also match "кофе латте"
+	underscore, err := expenses.List(ctx, service.ListInput{Text: "кофе_латте", Limit: 10})
+	if err != nil {
+		t.Fatalf("list with underscore: %v", err)
+	}
+	if len(underscore) != 1 || underscore[0].Comment != "скидка 50% на кофе_латте" {
+		t.Fatalf("_ must match literally, got %+v", underscore)
+	}
+
+	none, err := expenses.List(ctx, service.ListInput{Text: "отель", Limit: 10})
+	if err != nil {
+		t.Fatalf("list with unmatched text: %v", err)
+	}
+	if len(none) != 0 {
+		t.Fatalf("unmatched text must return nothing, got %d", len(none))
+	}
+
+	all, err := expenses.List(ctx, service.ListInput{Text: "   ", Limit: 10})
+	if err != nil {
+		t.Fatalf("list with blank text: %v", err)
+	}
+	if len(all) != 5 {
+		t.Fatalf("blank text must disable the filter, got %d of 5", len(all))
+	}
+}
+
+func TestPatchClearingCommentStoresNull(t *testing.T) {
+	pool := newTestPool(t)
+	seedUser(t, pool, userAlice)
+
+	expenses := service.NewExpenseService(pool)
+	ctx := service.WithUserScope(context.Background(), userAlice)
+	e := mustCreate(t, pool, userAlice, service.CreateInput{AmountMinor: 35050, Category: "food", SpentAt: "2026-10-19", Comment: "кофе"})
+
+	empty := ""
+	if _, err := expenses.Patch(ctx, e.ID, service.PatchInput{Comment: &empty}); err != nil {
+		t.Fatalf("patch clear comment: %v", err)
+	}
+
+	stored := func() *string {
+		t.Helper()
+		var comment *string
+		if err := pool.QueryRow(context.Background(), "SELECT comment FROM expenses WHERE id = $1", e.ID).Scan(&comment); err != nil {
+			t.Fatal(err)
+		}
+		return comment
+	}
+
+	if got := stored(); got != nil {
+		t.Fatalf("cleared comment stored as %q, want NULL", *got)
+	}
+
+	// a patch without comment must keep the cleared state
+	amount := int64(40000)
+	if _, err := expenses.Patch(ctx, e.ID, service.PatchInput{AmountMinor: &amount}); err != nil {
+		t.Fatalf("patch amount: %v", err)
+	}
+	if got := stored(); got != nil {
+		t.Fatalf("comment resurrected after unrelated patch: %q", *got)
+	}
+}

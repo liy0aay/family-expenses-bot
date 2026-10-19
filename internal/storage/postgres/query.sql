@@ -19,6 +19,8 @@ WHERE (sqlc.narg('user_id')::BIGINT IS NULL OR user_id = sqlc.narg('user_id'))
   AND (sqlc.narg('date_from')::DATE IS NULL OR spent_at >= sqlc.narg('date_from'))
   AND (sqlc.narg('date_to')::DATE IS NULL OR spent_at <= sqlc.narg('date_to'))
   AND (sqlc.narg('category')::TEXT IS NULL OR category = sqlc.narg('category'))
+  -- @text arrives pre-escaped: %, _, \ are made literal by service textFilter
+  AND (sqlc.narg('text')::TEXT IS NULL OR comment ILIKE '%' || sqlc.narg('text') || '%')
 ORDER BY created_at DESC
 LIMIT @lim::BIGINT;
 
@@ -33,7 +35,7 @@ UPDATE expenses
 SET amount_minor = COALESCE(sqlc.narg('amount_minor'), amount_minor),
     category     = COALESCE(sqlc.narg('category'), category),
     spent_at     = COALESCE(sqlc.narg('spent_at'), spent_at),
-    comment      = COALESCE(sqlc.narg('comment'), comment),
+    comment      = NULLIF(COALESCE(sqlc.narg('comment'), comment), ''),
     updated_at   = now()
 WHERE id = @id
   AND (sqlc.narg('user_id')::BIGINT IS NULL OR user_id = sqlc.narg('user_id'))
@@ -66,4 +68,5 @@ LIMIT 1;
 -- name: ListUsers :many
 SELECT id, username, first_name, created_at, updated_at
 FROM users
+WHERE (sqlc.narg('user_id')::BIGINT IS NULL OR id = sqlc.narg('user_id'))
 ORDER BY id;

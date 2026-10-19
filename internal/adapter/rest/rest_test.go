@@ -371,3 +371,33 @@ func TestUsersList(t *testing.T) {
 		t.Fatalf("bob must have null username: %+v", l.Items[1])
 	}
 }
+
+func TestInternalErrorsServe500WithCodeInternal(t *testing.T) {
+	ts, pool := newTestEnv(t)
+
+	// deterministic way to fail DB-backed queries without mocking
+	pool.Close()
+
+	status, data := doRequest(t, ts, http.MethodGet, "/expenses", "")
+	if status != http.StatusInternalServerError {
+		t.Fatalf("GET /expenses status %d: %s", status, data)
+	}
+	var e errorBody
+	if err := json.Unmarshal(data, &e); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if e.Error.Code != "internal" {
+		t.Fatalf("GET /expenses code %q, want internal", e.Error.Code)
+	}
+
+	status, data = doRequest(t, ts, http.MethodGet, "/expenses/42", "")
+	if status != http.StatusInternalServerError {
+		t.Fatalf("GET /expenses/42 status %d: %s", status, data)
+	}
+	if err := json.Unmarshal(data, &e); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if e.Error.Code != "internal" {
+		t.Fatalf("GET /expenses/42 code %q, want internal", e.Error.Code)
+	}
+}

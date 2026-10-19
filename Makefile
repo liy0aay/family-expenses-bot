@@ -8,8 +8,9 @@ build:
 lint:
 	go tool golangci-lint run
 
+# -p 1: service and rest tests share one TEST_POSTGRES_DSN database, parallel packages race on TRUNCATE; -count=1 bans the cache
 test:
-	go test ./...
+	go test -p 1 -count=1 ./...
 
 generate:
 	go generate ./...

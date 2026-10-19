@@ -50,16 +50,12 @@ func (s *UserService) ListUsers(ctx context.Context) ([]User, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.q.ListUsers(ctx)
+	rows, err := s.q.ListUsers(ctx, nullableInt8(sc.rowUserFilter()))
 	if err != nil {
 		return nil, fmt.Errorf("%w: list users: %w", domain.ErrInternal, err)
 	}
 	users := make([]User, 0, len(rows))
 	for _, row := range rows {
-		// the roster serves the panel; under UserScope the bot gets only its own row
-		if sc.kind == scopeUser && row.ID != sc.userID {
-			continue
-		}
 		users = append(users, toUser(row))
 	}
 	return users, nil
