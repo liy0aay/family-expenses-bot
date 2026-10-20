@@ -35,6 +35,13 @@ type capturedRequest struct {
 		Role       string `json:"role"`
 		Content    string `json:"content"`
 		ToolCallID string `json:"tool_call_id"`
+		ToolCalls  []struct {
+			ID       string `json:"id"`
+			Function struct {
+				Name      string `json:"name"`
+				Arguments string `json:"arguments"`
+			} `json:"function"`
+		} `json:"tool_calls"`
 	} `json:"messages"`
 }
 
@@ -243,6 +250,44 @@ func TestStopsAfterFourIterationsWithPoliteAnswer(t *testing.T) {
 	history := mem.History(chatID)
 	if last := history[len(history)-1]; last.Role != "assistant" || last.Content != reply {
 		t.Fatalf("polite answer must be stored as the assistant turn, got %+v", last)
+	}
+}
+
+func TestHistoryReplaysFullToolTrace(t *testing.T) {
+	fake := &fakeLLM{responses: []map[string]any{
+		toolReply(toolCall("c1", "add_expense", `{"amount_rub":350,"category":"food","spent_at":"2026-10-19"}`)),
+		contentReply("Записал: кофе — 350 ₽ (еда), сегодня."),
+		contentReply("Готово."),
+	}}
+	llm := httptest.NewServer(fake.handler())
+	defer llm.Close()
+	ag, _, _ := newAgentEnv(t, llm)
+
+	ag.Handle(scoped(context.Background()), chatID, "кофе 350")
+	ag.Handle(scoped(context.Background()), chatID, "что записал?")
+
+	msgs := fake.requests[2].Messages
+	trace := -1
+	for i, m := range msgs {
+		if m.Role == "assistant" && len(m.ToolCalls) == 1 && m.ToolCalls[0].Function.Name == "add_expense" {
+			trace = i
+			break
+		}
+	}
+	if trace == -1 {
+		t.Fatal("replayed history must contain the assistant turn with its tool_calls")
+	}
+	if msgs[trace].ToolCalls[0].ID != "c1" {
+		t.Fatalf("tool call id = %q, want c1", msgs[trace].ToolCalls[0].ID)
+	}
+	if msgs[trace+1].Role != "tool" || msgs[trace+1].ToolCallID != "c1" {
+		t.Fatalf("message after tool_calls = %s (tool_call_id %q), want a tool result anchored to c1", msgs[trace+1].Role, msgs[trace+1].ToolCallID)
+	}
+	if msgs[trace+2].Role != "assistant" || msgs[trace+2].Content != "Записал: кофе — 350 ₽ (еда), сегодня." {
+		t.Fatalf("final assistant reply must follow the tool result, got %s %q", msgs[trace+2].Role, msgs[trace+2].Content)
+	}
+	if msgs[trace+3].Role != "user" || msgs[trace+3].Content != "что записал?" {
+		t.Fatalf("the new user message must come last, got %s %q", msgs[trace+3].Role, msgs[trace+3].Content)
 	}
 }
 

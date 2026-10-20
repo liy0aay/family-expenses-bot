@@ -50,12 +50,9 @@ func (a *Agent) Handle(ctx context.Context, chatID int64, text string) string {
 	messages := make([]Message, 0, len(history)+1)
 	messages = append(messages, Message{Role: RoleSystem, Content: a.systemMessage(chatID)})
 	for _, m := range history {
-		// tool results stay in memory for window accounting, but a replayed tool
-		// message has no tool_call_id anchor, which strict providers reject
-		if m.Role == "tool" {
-			continue
-		}
-		messages = append(messages, Message{Role: Role(m.Role), Content: m.Content})
+		msg := Message{Role: Role(m.Role), Content: m.Content, ToolCallID: m.ToolCallID}
+		_ = json.Unmarshal([]byte(m.ToolCalls), &msg.ToolCalls)
+		messages = append(messages, msg)
 	}
 	definitions := a.tools.Definitions()
 
@@ -76,10 +73,11 @@ func (a *Agent) Handle(ctx context.Context, chatID int64, text string) string {
 			return a.finish(chatID, resp.Content)
 		}
 		messages = append(messages, resp)
+		a.memory.Append(chatID, memoryAssistant(resp))
 		for _, tc := range resp.ToolCalls {
 			result := a.execTool(ctx, chatID, tc)
 			messages = append(messages, Message{Role: RoleTool, ToolCallID: tc.ID, Content: result})
-			a.memory.Append(chatID, memory.Message{Role: "tool", Content: result})
+			a.memory.Append(chatID, memory.Message{Role: "tool", ToolCallID: tc.ID, Content: result})
 		}
 	}
 	return a.finish(chatID, giveUpText)
@@ -88,6 +86,16 @@ func (a *Agent) Handle(ctx context.Context, chatID int64, text string) string {
 func (a *Agent) finish(chatID int64, text string) string {
 	a.memory.Append(chatID, memory.Message{Role: "assistant", Content: text})
 	return text
+}
+
+func memoryAssistant(resp Message) memory.Message {
+	m := memory.Message{Role: "assistant", Content: resp.Content}
+	if len(resp.ToolCalls) > 0 {
+		if b, err := json.Marshal(resp.ToolCalls); err == nil {
+			m.ToolCalls = string(b)
+		}
+	}
+	return m
 }
 
 func (a *Agent) systemMessage(chatID int64) string {
@@ -103,6 +111,7 @@ func (a *Agent) systemMessage(chatID int64) string {
 
 // failures reach the LLM as {error:{code,message}} (contract rule 5).
 func (a *Agent) execTool(ctx context.Context, chatID int64, tc ToolCall) string {
+	slog.Info("agent tool call", "chat_id", chatID, "tool", tc.Function.Name)
 	out, err := a.tools.Dispatch(ctx, tc.Function.Name, tc.Function.Arguments)
 	var payload any
 	if err != nil {

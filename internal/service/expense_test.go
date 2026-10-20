@@ -253,6 +253,7 @@ func TestCreateValidation(t *testing.T) {
 		{"unknown category", service.CreateInput{AmountMinor: 100, Category: "кафе", SpentAt: "2026-10-19"}, domain.ErrInvalidCategory},
 		{"wrong date format", service.CreateInput{AmountMinor: 100, Category: "food", SpentAt: "19.10.2026"}, domain.ErrInvalidDate},
 		{"too long comment", service.CreateInput{AmountMinor: 100, Category: "food", SpentAt: "2026-10-19", Comment: strings.Repeat("ы", 501)}, domain.ErrValidation},
+		{"future date allowed", service.CreateInput{AmountMinor: 100, Category: "food", SpentAt: "2027-01-05"}, nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

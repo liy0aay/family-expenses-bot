@@ -13,12 +13,12 @@
 **Цель**: компилируемый каркас + домен с деньгами/категориями/временем + хранилище + сервис с правами. Блокирует всё остальное.
 
 - [x] T001 Создать каркас по plan.md: `go.mod` (go 1.27), каталоги `cmd/server/`, `internal/{config,clock,domain,service,agent,adapter,storage}`, `.env.example` со всеми переменными и `Makefile` (build/lint/test/generate/eval/run) — закрывает: базу для FR-020, FR-021
-- [x] T002 [P] Конфиг из ENV: `POSTGRES_*`, `LISTEN_ADDR`, `LLM_BASE_URL/LLM_API_KEY/LLM_MODEL/LLM_TEMPERATURE`, `TELEGRAM_BOT_TOKEN`, `EXPENSES_LIST_LIMIT`, `DIALOG_WINDOW=8`, `DIALOG_TTL=30m` в `internal/config/config.go` — закрывает: FR-021, FR-022
+- [x] T002 [P] Конфиг из ENV: `POSTGRES_*`, `LISTEN_ADDR`, `LLM_BASE_URL/LLM_API_KEY/LLM_MODEL/LLM_TEMPERATURE`, `TELEGRAM_BOT_TOKEN`, `EXPENSES_LIST_LIMIT`, `DIALOG_WINDOW=16`, `DIALOG_TTL=30m` в `internal/config/config.go` — закрывает: FR-021, FR-022
 - [x] T003 [P] Домен категорий: справочник 7 slug↔русское название и `NormalizeCategory` (trim → lower → е→ё → slug; неизвестное → ErrInvalidCategory) в `internal/domain/category.go` — закрывает: FR-005, FR-006
 - [x] T004 [P] Деньги: `RublesToKopecks` — парсинг `json.Number`/строки (рубли и копейки отдельно, без float64 и math.Round; >2 знаков после точки или ≤0 → ErrInvalidAmount) в `internal/domain/money.go` — закрывает: FR-004
 - [x] T005 [P] Ошибки домена (ErrInvalidAmount/ErrInvalidCategory/ErrInvalidDate/ErrNotFound/ErrValidation/ErrInternal по contracts/errors.md) в `internal/domain/errors.go` + интерфейс `Clock` с RealClock/FixedClock в `internal/clock/clock.go` — закрывает: FR-014; принципы V, VII
 - [x] T006 Миграция goose `internal/storage/migrations/0001_init.sql`: `users` + `expenses` (`amount_minor BIGINT CHECK (amount_minor > 0)`, `category TEXT CHECK IN 7 slug'ов`, `spent_at DATE`, индексы `(user_id, spent_at)` и `(user_id, created_at DESC)`) — закрывает: FR-001 (data-model.md)
-- [x] T007 sqlc: `internal/storage/postgres/query.sql` + `sqlc.yaml` — upsert пользователей (ON CONFLICT), CRUD трат, фильтры (user_id/date_from/date_to/category), сводка (SUM/COUNT), «последняя» по created_at LIMIT 1 — закрывает: FR-001, FR-007, FR-008, FR-009
+- [x] T007 sqlc: `internal/storage/postgres/query.sql` + `sqlc.yaml` — upsert пользователей (ON CONFLICT), CRUD трат, фильтры (user_id/date_from/date_to/category), сводка (SUM/COUNT), «последняя введённая» по created_at LIMIT 1 (`service.Last`, резерв фолбэка) — закрывает: FR-001, FR-007, FR-008
 - [x] T008 Пул pgx/v5 и применение goose-миграций при старте в `internal/storage/postgres/postgres.go` — закрывает: FR-020
 - [x] T009 [US1] [P] Тесты `internal/domain/money_test.go` и `category_test.go`: суммы 350, 350.5, 350.50, 0.01 — ок; 350.505 → invalid_amount; е/ё («жилье»/«Жильё» → housing); неизвестная категория → ошибка — закрывает: US1, FR-004, FR-006; SC-003
 - [x] T010 [US1] `internal/service/expense.go` (+`user.go`): Create/List/Get/Patch/Delete/Summary/Last с валидацией домена и правами в одном месте: `UserScope` (бот — строго свой user_id из ctx) и `FamilyHeadScope` (панель — все траты, user_id как опциональный фильтр); чужая трата → not_found — закрывает: US1–US6, FR-011, FR-019; принцип I
@@ -43,9 +43,9 @@
 **Цель**: бот на естественном языке: добавление/просмотр/изменение/удаление, изоляция, сообщения не о тратах. Зависит от T010 (service).
 
 - [x] T017 [US1] [P] OpenAI-совместимый клиент `chat/completions` + tools на `net/http` (конфиг LLM_*; логирование slog: модель, длительность, число тул-вызовов; парсинг аргументов как `json.Number`) в `internal/agent/llm.go` — закрывает: FR-021; ADR-005, принцип II
-- [x] T018 [US3] [P] In-memory память диалога по chat_id: окно 8 сообщений (включая результаты тулов), TTL 30 мин (из конфига), упомянутые expense_id («последнее», кандидаты удаления) в `internal/agent/memory/memory.go` — закрывает: US3, US4, FR-009, FR-013; ADR-006
-- [x] T019 [US3] Тесты памяти `internal/agent/memory/memory_test.go`: вытеснение за окном 8, истечение TTL → сброс, поведение «последнее» после сброса — закрывает: FR-013, FR-009
-- [x] T020 [US2] [P] Адаптеры 5 тулов по contracts/agent-tools.md → вызовы service (user_id строго через ctx): add (amount_rub → RublesToKopecks), find (текст/фильтры, created_at DESC), update, delete, get_summary (арифметика в Go); ошибки тулов назад к LLM как `{error:{code,message}}` в `internal/agent/tools/tools.go` — закрывает: US1–US4, FR-002, FR-004, FR-009, FR-010; принципы I–III
+- [x] T018 [US3] [P] In-memory память диалога по chat_id: окно 16 сообщений (полный ход: user, assistant с tool_calls, результаты тулов, финальный ответ), TTL 30 мин (из конфига), упомянутые expense_id («последнее», кандидаты удаления) в `internal/agent/memory/memory.go` — закрывает: US3, US4, FR-009, FR-013; ADR-006
+- [x] T019 [US3] Тесты памяти `internal/agent/memory/memory_test.go`: вытеснение за окном 16, истечение TTL → сброс, поведение «последнее» после сброса — закрывает: FR-013, FR-009
+- [x] T020 [US2] [P] Адаптеры 5 тулов по contracts/agent-tools.md → вызовы service (user_id строго через ctx): add (amount_rub → RublesToKopecks), find (текст/фильтры, spent_at DESC, id DESC), update, delete, get_summary (арифметика в Go); ошибки тулов назад к LLM как `{error:{code,message}}` в `internal/agent/tools/tools.go` — закрывает: US1–US4, FR-002, FR-004, FR-009, FR-010; принципы I–III
 - [x] T021 [US1] Оркестратор `internal/agent/agent.go`: системный промпт (текущая дата из Clock; без user_id), цикл tool calling ≤ 4 итераций, диалоговые правила: «последнее» через память → fallback find limit=1, удаление — 1 совпадение сразу / 2–3 последние + ровно один уточняющий вопрос, сообщения не о тратах без вызова тулов, переспрос при нехватке данных — закрывает: US1–US4, FR-002, FR-003, FR-008, FR-009, FR-010, FR-012, FR-014; принцип III
 - [x] T022 [US4] [P] Тесты оркестратора `internal/agent/agent_test.go` (fake LLM): остановка после 4 итераций с вежливым ответом; «привет/спасибо» → ни одного тул-вызова; «последнее» из памяти и по fallback; invalid_amount → траты нет, понятный ответ; удаление при 2+ совпадениях -> 2–3 кандидата и ровно один уточняющий вопрос — закрывает: US1–US4, FR-009, FR-010, FR-012; SC-006, SC-008
 - [x] T023 [US1] Telegram long polling: `getUpdates`/`sendMessage` на `net/http`, upsert пользователя на каждое сообщение, вызов агента, `recover()` в горутине polling, пустой `TELEGRAM_BOT_TOKEN` → WARN «starting in Web-API only mode» и без запуска бота в `internal/adapter/telegram/bot.go` — закрывает: US1–US4, FR-007, FR-022; ADR-004
@@ -61,7 +61,7 @@
 - [x] T026 [US5] Список трат всех членов с именем/username владельца, фильтры (член семьи + период date_from/date_to + категория, комбинируются), русские названия категорий и суммы в рублях в `web/src/pages/ExpensesPage.tsx` — закрывает: US5, FR-015, FR-016; SC-005
 - [x] T027 [US6] Формы создания (выбор члена семьи), редактирования и удаления + обработка ошибок по `code` из contracts/errors.md в `web/src/components/ExpenseForm.tsx` — закрывает: US6, FR-017, FR-018
 - [x] T028 [US5] [P] Seeding при старте, только если таблица `users` пуста (несколько пользователей и трат за текущий месяц), в `internal/storage/postgres/seed.go`; тест: повторный запуск не создаёт дублей — закрывает: US5, FR-020; quickstart сценарий 1
-- [x] T028a [US5] Аналитика: GET /expenses/summary (SummaryByCategory) + карточка с диаграммой по категориям, суммы в легенде — закрывает: FR-024; SC-005
+- [x] T028a [US5] Аналитика: GET /expenses/summary (SummaryByCategory, опциональный фильтр по члену семьи) + карточка с диаграммой по категориям, суммы в легенде — закрывает: FR-024; SC-005
 
 **Checkpoint**: по quickstart.md сценарии 1 и панель из браузера: фильтры работают, CRUD виден и в боте того же пользователя.
 
@@ -69,11 +69,12 @@
 
 **Цель**: воспроизводимое качество агента и «одна команда» запуска.
 
-- [x] T029 [P] Датасет `evals/dataset.yaml`: 25–30 кейсов — добавление/просмотр/изменение/удаление, относительные даты («вчера», «позавчера», «в этом месяце», «с 1 по 15 октября»), е/ё, сообщения не о тратах, некорректные суммы, изоляция — закрывает: FR-023; SC-002
-- [x] T030 Раннер `evals/runner_eval.go` с тегом `//go:build eval`: фиксированный reference_time через FixedClock, прогон датасета через агента, отчёт с процентом прохождения (порог ≥90%); таргет `make eval` в `Makefile` — закрывает: FR-023; SC-001, SC-002
+- [x] T029 [P] Датасет `evals/dataset.yaml`: 25–30 кейсов — добавление/просмотр/изменение/удаление, относительные даты («вчера», «позавчера», «в этом месяце», «с 1 по 15 октября»), е/ё, сообщения не о тратах, некорректные суммы, изоляция; кейсы — один накопительный диалог (зависимость по состоянию намеренная, проверяет FR-009) — закрывает: FR-023; SC-002
+- [x] T030 Раннер `evals/runner_eval.go` с тегом `//go:build eval`: фиксированный reference_time через FixedClock, прогон датасета через агента, отчёт с процентом прохождения (порог ≥90%) и временем ответа по кейсу (SC-001); таргет `make eval` в `Makefile` — закрывает: FR-023; SC-001, SC-002
 - [x] T031 `docker-compose.yml` + `Dockerfile` (multi-stage: статика web + сервер): postgres:16, server, web; web проксирует `/api` → server (как в quickstart); всё поднимается `docker compose up` без ручных шагов — закрывает: FR-020; SC-007
 - [x] T032 CI `.github/workflows/ci.yml`: `make lint && make test` + проверка пустого diff кодогенерации (`make generate` → `git diff --exit-code`) — закрывает: FR-017; процесс из AGENTS.md
 - [x] T033 [P] Финальный `README.md`: запуск `docker compose up`, заполнение `.env`, сценарии бота/панели/evals со ссылками на quickstart.md — закрывает: FR-020; SC-007
+- [x] T034 [P] Амендменты после `/speckit.analyze`: фолбэк «последнее» = spent_at (FR-009, US3, edge, data-model.md — компромисс контракта согласован со спекой), объём датасета перенесён в FR-023, формулировка исполнения тул-вызовов в contracts/agent-tools.md, правило удаления при расширяющем поиске (prompt.md + contracts/agent-tools.md) — закрывает: FR-009, FR-010, FR-023; SC-002
 
 **Checkpoint**: `docker compose up` с чистого клона → все сценарии quickstart.md воспроизводимы.
 
@@ -116,5 +117,5 @@ Task: "T033 README.md"
 
 - [P] = разные файлы, нет зависимости от незавершённых задач.
 - [USx] — трассировка к spec.md; в скобках каждой задачи — закрываемые FR.
-- Ограничения с data-model.md переносить в код дословно: `amount_minor > 0`, 2 знака после точки максимум, 7 slug'ов категорий, окно 8 / TTL 30 мин, комментарий ≤ 500 символов.
+- Ограничения с data-model.md переносить в код дословно: `amount_minor > 0`, 2 знака после точки максимум, 7 slug'ов категорий, окно 16 / TTL 30 мин, комментарий ≤ 500 символов.
 - Коммит после каждой задачи или логичной группы; `make lint && make test` перед коммитом; изменения контракта — только через `make generate` с пустым diff.

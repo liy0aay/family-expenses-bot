@@ -75,7 +75,7 @@ func Load() (Config, error) {
 	}
 	cfg.ExpensesListLimit = limit
 
-	window, err := envInt("DIALOG_WINDOW", 8)
+	window, err := envInt("DIALOG_WINDOW", 16)
 	if err != nil {
 		return Config{}, err
 	}

@@ -6,7 +6,7 @@
 
 ## Summary
 
-Единый Go-сервис (`cmd/server/main.go`): REST API веб-панели главы семьи (сервер и роутер генерируются ogen'ом из `api/openapi.yaml`, OpenAPI 3.0.3) + Telegram-бот на Long Polling с ИИ-агентом (OpenAI-совместимый LLM, цикл tool calling ≤ 4 итераций, 5 тулов) поверх общего доменного слоя `internal/service`. Хранилище — PostgreSQL 16 (pgx/v5 + sqlc, миграции goose): `users` и `expenses` (деньги — `amount_minor BIGINT`, категория — slug с CHECK). Диалоговая память in-memory (окно 8 сообщений, TTL 30 мин). Время — инжектируемый `Clock`. Веб-панель — React + Vite + TypeScript, типы из openapi.yaml. Всё поднимается `docker compose up`; пустой `TELEGRAM_BOT_TOKEN` — режим Web-API only (WARN, не ошибка). Качество агента проверяется eval-набором (25–30 кейсов, фиксированный reference_time).
+Единый Go-сервис (`cmd/server/main.go`): REST API веб-панели главы семьи (сервер и роутер генерируются ogen'ом из `api/openapi.yaml`, OpenAPI 3.0.3) + Telegram-бот на Long Polling с ИИ-агентом (OpenAI-совместимый LLM, цикл tool calling ≤ 4 итераций, 5 тулов) поверх общего доменного слоя `internal/service`. Хранилище — PostgreSQL 16 (pgx/v5 + sqlc, миграции goose): `users` и `expenses` (деньги — `amount_minor BIGINT`, категория — slug с CHECK). Диалоговая память in-memory (окно 16 сообщений, TTL 30 мин). Время — инжектируемый `Clock`. Веб-панель — React + Vite + TypeScript, типы из openapi.yaml. Всё поднимается `docker compose up`; пустой `TELEGRAM_BOT_TOKEN` — режим Web-API only (WARN, не ошибка). Качество агента проверяется eval-набором (25–30 кейсов, фиксированный reference_time).
 
 ## Technical Context
 
@@ -76,7 +76,7 @@ internal/
 │                           # RublesToKopecks, NormalizeCategory
 ├── service/                # ExpenseService, UserService: права (UserScope/FamilyHeadScope), валидация
 ├── agent/                  # Оркестратор LLM: системный промпт (дата из Clock), цикл tool calling ≤ 4
-│   ├── memory/             # In-memory память диалога (окно 8, TTL 30 мин)
+│   ├── memory/             # In-memory память диалога (окно 16, TTL 30 мин)
 │   └── tools/              # Адаптеры 5 тулов → вызовы service (user_id только через ctx)
 ├── adapter/
 │   ├── rest/               # Сгенерированный ogen-сервер, хендлеры, маппинг ошибок (один хелпер);

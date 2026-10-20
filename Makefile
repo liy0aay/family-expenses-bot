@@ -2,6 +2,8 @@
 
 BIN := bin/server
 
+EVALS_POSTGRES_DSN ?= postgres://postgres:postgres@localhost:55450/expenses?sslmode=disable
+
 build:
 	go build -o $(BIN) ./cmd/server
 
@@ -15,7 +17,7 @@ generate:
 	go generate ./...
 
 eval:
-	go run -tags eval ./evals
+	EVALS_POSTGRES_DSN=$(EVALS_POSTGRES_DSN) go run -tags eval ./evals
 
 run:
 	set -a && . ./.env && set +a && go run ./cmd/server

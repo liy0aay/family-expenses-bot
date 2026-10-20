@@ -8,8 +8,10 @@ import (
 )
 
 type Message struct {
-	Role    string
-	Content string
+	Role       string
+	Content    string
+	ToolCalls  string
+	ToolCallID string
 }
 
 type Memory struct {

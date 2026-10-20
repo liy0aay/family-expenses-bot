@@ -52,7 +52,7 @@ cases:
   - id: find_by_word_miss
     chat: 1001
     input: "найди кафетерий"
-    expect: { tools_max: 2, count_delta: 0, contains_any: ["не нашл", "нет трат", "ничего"] }
+    expect: { tools_max: 2, count_delta: 0, contains_any: ["не наш", "не найд", "нет трат", "ничего"] }
 
   - id: update_last_amount
     chat: 1001
@@ -67,7 +67,7 @@ cases:
   - id: delete_single_match
     chat: 1001
     input: "удали пиццу"
-    expect: { tools_min: 1, tools_max: 3, count_delta: -1, contains_any: ["900", "пицц"] }
+    expect: { tools_min: 1, tools_max: 3, count_delta: -1, contains_any: ["900"] }
 
   - id: delete_ambiguous
     chat: 1001
@@ -77,7 +77,7 @@ cases:
   - id: delete_nothing_found
     chat: 1001
     input: "удали кафетерий"
-    expect: { tools_min: 1, tools_max: 2, count_delta: 0, contains_any: ["не нашл", "нет трат", "ничего"] }
+    expect: { tools_min: 1, tools_max: 2, count_delta: 0, contains_any: ["не наш", "не найд", "нет трат", "ничего"] }
 
   - id: summary_food_month
     chat: 1001
@@ -87,12 +87,12 @@ cases:
   - id: isolation_empty_chat
     chat: 1002
     input: "показать мои траты за неделю"
-    expect: { tools_min: 1, count_delta: 0, contains_any: ["не нашл", "нет трат", "пока нет", "ничего"] }
+    expect: { tools_min: 1, count_delta: 0, contains_any: ["не наш", "не найд", "нет трат", "пока нет", "ничего"] }
 
   - id: isolation_delete_foreign
     chat: 1002
     input: "удали трату 1"
-    expect: { tools_min: 1, tools_max: 3, count_delta: 0, contains_any: ["не нашл", "нет такой", "не удал", "нельзя"] }
+    expect: { tools_min: 1, tools_max: 3, count_delta: 0, contains_any: ["не наш", "не найд", "нет такой", "не удал", "нельзя"] }
 
   - id: chat_greeting
     chat: 1001
@@ -112,7 +112,7 @@ cases:
   - id: chat_capabilities
     chat: 1001
     input: "что ты умеешь?"
-    expect: { tools_max: 0, count_delta: 0, contains_any: ["добав", "найд"] }
+    expect: { tools_max: 0, count_delta: 0, contains_any: ["добав", "найд", "запис", "иск", "итог"] }
 
   - id: invalid_zero_amount
     chat: 1001

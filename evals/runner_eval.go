@@ -75,12 +75,13 @@ func (d *loggingDispatcher) Dispatch(ctx context.Context, name, arguments string
 }
 
 type caseResult struct {
-	caseID string
-	ok     bool
-	tools  []string
-	delta  int
-	reply  string
-	reason string
+	caseID   string
+	ok       bool
+	tools    []string
+	delta    int
+	duration time.Duration
+	reply    string
+	reason   string
 }
 
 func main() {
@@ -177,10 +178,11 @@ func runCase(
 		before := countExpenses(ctx, pool, tc.Chat)
 
 		disp.calls = nil
+		started := time.Now()
 		reply := dialogAgent.Handle(caseCtx, tc.Chat, tc.Input)
 		after := countExpenses(ctx, pool, tc.Chat)
 
-		last = evaluate(tc, disp.calls, before, after, reply)
+		last = evaluate(tc, disp.calls, before, after, reply, time.Since(started))
 
 		if reply == agent.LLMFailText && attempt < maxRetries {
 			if _, err := pool.Exec(ctx,
@@ -194,12 +196,13 @@ func runCase(
 	}
 }
 
-func evaluate(tc evalCase, calls []recordedCall, before, after int, reply string) caseResult {
+func evaluate(tc evalCase, calls []recordedCall, before, after int, reply string, duration time.Duration) caseResult {
 	res := caseResult{
-		caseID: tc.ID,
-		tools:  make([]string, 0, len(calls)),
-		delta:  after - before,
-		reply:  reply,
+		caseID:   tc.ID,
+		tools:    make([]string, 0, len(calls)),
+		delta:    after - before,
+		duration: duration,
+		reply:    reply,
 	}
 	for _, c := range calls {
 		res.tools = append(res.tools, c.name)
@@ -228,10 +231,11 @@ func evaluate(tc evalCase, calls []recordedCall, before, after int, reply string
 }
 
 func anySubstring(reply string, want []string) (bool, string) {
-	lower := strings.ToLower(reply)
+	fold := func(s string) string { return strings.ReplaceAll(strings.ToLower(s), "ё", "е") }
+	lower := fold(reply)
 	var quoted []string
 	for _, s := range want {
-		if strings.Contains(lower, strings.ToLower(s)) {
+		if strings.Contains(lower, fold(s)) {
 			return true, ""
 		}
 		quoted = append(quoted, strconv.Quote(s))
@@ -284,7 +288,7 @@ func printResult(res caseResult) {
 	if !res.ok {
 		status = "FAIL"
 	}
-	line := fmt.Sprintf("[%s] %-26s tools=%v delta=%+d", status, res.caseID, res.tools, res.delta)
+	line := fmt.Sprintf("[%s] %-26s tools=%v delta=%+d took=%s", status, res.caseID, res.tools, res.delta, res.duration.Round(time.Millisecond))
 	if !res.ok {
 		line += "\n       reason: " + res.reason + "\n       reply: " + oneLine(res.reply)
 	}
